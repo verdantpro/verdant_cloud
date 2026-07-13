@@ -1,0 +1,339 @@
+# yaml-language-server: $schema=./quartz/plugins/quartz-plugins.schema.json
+configuration:
+  pageTitle: verdant
+  pageTitleSuffix: ""
+  enableSPA: true
+  enablePopovers: true
+  analytics:
+    provider: plausible
+  locale: en-US
+  baseUrl: verdantprotocol.com
+  ignorePatterns:
+    - private
+    - templates
+    - .obsidian
+  theme:
+    # fonts are not fetched for the site itself — custom.scss pins every font
+    # role to the system mono stack. these names only feed the og-image
+    # renderer, which needs a real fetchable font to lay out social cards.
+    fontOrigin: local
+    cdnCaching: true
+    typography:
+      header: IBM Plex Mono
+      body: IBM Plex Mono
+      code: IBM Plex Mono
+    colors:
+      lightMode:
+        light: "#fcfcfb"
+        lightgray: "#e7e7e3"
+        gray: "#9b9b95"
+        darkgray: "#46463f"
+        dark: "#12120f"
+        secondary: "#2f6f4f"
+        tertiary: "#7fa88c"
+        highlight: rgba(47, 111, 79, 0.07)
+        textHighlight: "#c9e4d488"
+      darkMode:
+        light: "#0e0f0e"
+        lightgray: "#24262a"
+        gray: "#6b6f6c"
+        darkgray: "#c4c8c4"
+        dark: "#f1f3f1"
+        secondary: "#7fc79a"
+        tertiary: "#4f9a6f"
+        highlight: rgba(127, 199, 154, 0.07)
+        textHighlight: "#3f7f5f88"
+plugins:
+  - source: github:quartz-community/created-modified-date
+    enabled: true
+    options:
+      defaultDateType: modified
+      priority:
+        - frontmatter
+        - git
+        - filesystem
+    order: 10
+  - source: github:quartz-community/syntax-highlighting
+    enabled: true
+    options:
+      theme:
+        light: github-light
+        dark: github-dark
+      keepBackground: false
+    order: 20
+  - source: github:quartz-community/obsidian-flavored-markdown
+    enabled: true
+    options:
+      comments: true
+      highlight: true
+      wikilinks: true
+      callouts: true
+      mermaid: true
+      parseTags: true
+      parseArrows: true
+      parseBlockReferences: true
+      enableInHtmlEmbed: false
+      enableYouTubeEmbed: true
+      enableVideoEmbed: true
+      enableCheckbox: true
+    order: 30
+  - source: github:quartz-community/github-flavored-markdown
+    enabled: true
+    order: 40
+  - source: github:quartz-community/table-of-contents
+    enabled: true
+    order: 50
+    layout:
+      position: right
+      priority: 30
+      condition: has-toc
+      display: desktop-only
+  - source: github:quartz-community/crawl-links
+    enabled: true
+    options:
+      markdownLinkResolution: shortest
+    order: 60
+  - source: github:quartz-community/description
+    enabled: true
+    order: 70
+  - source: github:quartz-community/latex
+    enabled: true
+    options:
+      renderEngine: katex
+    order: 80
+  - source: github:quartz-community/citations
+    enabled: false
+    order: 85
+  # off: this turns every newline in a source file into a <br>, so prose that is
+  # soft-wrapped in the editor fractures mid-sentence on the page
+  - source: github:quartz-community/hard-line-breaks
+    enabled: false
+    order: 90
+  - source: github:quartz-community/ox-hugo
+    enabled: false
+    order: 91
+  - source: github:quartz-community/roam
+    enabled: false
+    order: 92
+  # system mono only — no webfonts are fetched
+  - source: github:quartz-community/fonts
+    enabled: false
+  - source: github:quartz-community/remove-draft
+    enabled: true
+  - source: github:quartz-community/explicit-publish
+    enabled: false
+  - source: github:quartz-community/unlisted-pages
+    enabled: true
+    options: {}
+    order: 45
+  - source: github:quartz-community/encrypted-pages
+    enabled: true
+    options:
+      iterations: 600000
+      passwordField: password
+      unlistWhenEncrypted: false
+      outputPath: static/encryptedContentIndex.json
+  - source: github:quartz-community/stacked-pages
+    enabled: false
+    layout:
+      position: afterBody
+      priority: 50
+      display: all
+  - source: github:quartz-community/alias-redirects
+    enabled: true
+  - source: github:quartz-community/content-index
+    enabled: true
+    options:
+      enableSiteMap: true
+      enableRSS: true
+  - source: github:quartz-community/favicon
+    enabled: true
+  - source: github:quartz-community/og-image
+    enabled: true
+  - source: github:quartz-community/cname
+    enabled: true
+  - source: github:quartz-community/canvas-page
+    enabled: true
+  - source: github:quartz-community/content-page
+    enabled: true
+  - source: github:quartz-community/folder-page
+    enabled: true
+  - source: github:quartz-community/tag-page
+    enabled: true
+  - source: github:quartz-community/explorer
+    enabled: false
+    layout:
+      position: left
+      priority: 50
+  - source: github:quartz-community/graph
+    enabled: false
+    layout:
+      position: right
+      priority: 10
+  - source: github:quartz-community/search
+    enabled: true
+    layout:
+      position: left
+      priority: 20
+      group: toolbar
+      groupOptions:
+        grow: true
+  # at the foot of the note rather than in a rail, so "linked from" reads as part
+  # of the text. no `has-backlinks` condition: that predicate checks
+  # fileData.backlinks, which this component never sets — it derives its list from
+  # allFiles — so the condition is always false and the block never renders.
+  # custom.scss hides the empty state instead.
+  - source: github:quartz-community/backlinks
+    enabled: true
+    options:
+      hideWhenEmpty: true
+    layout:
+      position: afterBody
+      priority: 20
+  - source: github:quartz-community/article-title
+    enabled: true
+    layout:
+      position: beforeBody
+      priority: 10
+  - source: github:quartz-community/content-meta
+    enabled: true
+    options:
+      showReadingTime: true
+      showComma: false
+    layout:
+      position: beforeBody
+      priority: 20
+  - source: github:quartz-community/tag-list
+    enabled: true
+    layout:
+      position: beforeBody
+      priority: 30
+  - source: github:quartz-community/page-title
+    enabled: true
+    layout:
+      position: left
+      priority: 10
+  - source: github:quartz-community/darkmode
+    enabled: true
+    layout:
+      position: left
+      priority: 30
+      group: toolbar
+  - source: github:quartz-community/reader-mode
+    enabled: false
+    layout:
+      position: left
+      priority: 35
+      group: toolbar
+  - source: github:quartz-community/breadcrumbs
+    enabled: true
+    options:
+      spacerSymbol: /
+      rootName: "~"
+      showCurrentPage: true
+    layout:
+      position: beforeBody
+      priority: 5
+      condition: not-index
+  - source: github:quartz-community/comments
+    enabled: false
+    options:
+      provider: giscus
+      options: {}
+    layout:
+      position: afterBody
+      priority: 10
+  # the "created with quartz" credit is hardcoded in the component (only `links`
+  # is configurable), so custom.scss hides that paragraph and keeps these links
+  - source: github:quartz-community/footer
+    enabled: true
+    options:
+      links:
+        colophon: /colophon
+        source: https://github.com/
+        rss: /index.xml
+  - source: github:quartz-community/recent-notes
+    enabled: true
+    options:
+      title: recent
+      limit: 5
+      linkToMore: notes
+      showTags: false
+      hideFolderPages: true
+      hideTagPages: true
+    layout:
+      position: left
+      priority: 40
+      # the mobile layout collapses the left sidebar into a header row, which a
+      # dated list overflows. mobile readers get /notes and "start here" instead.
+      display: desktop-only
+  - source: github:quartz-community/spacer
+    enabled: true
+    options: {}
+    order: 25
+    layout:
+      position: left
+      priority: 25
+      display: mobile-only
+  - source: github:quartz-community/bases-page
+    enabled: true
+    options: {}
+    order: 50
+  # this plugin also parses the frontmatter delimiters — disabling it entirely
+  # dumps raw yaml into the page body. it is the only thing that renders a
+  # frontmatter value, so it renders `description` (styled as a subtitle in
+  # custom.scss); tags are already shown as chips by tag-list.
+  - source: github:quartz-community/note-properties
+    enabled: true
+    options:
+      includeAll: false
+      includedProperties:
+        - description
+      excludedProperties: []
+      hidePropertiesView: false
+      delimiters: ---
+      language: yaml
+    order: 5
+    layout:
+      position: beforeBody
+      priority: 15
+      display: all
+  - source:
+      name: quartz-themes
+      repo: github:saberzero1/quartz-themes
+      subdir: plugin
+    enabled: false
+    options:
+      theme: default
+  - source: github:quartz-community/obsidian-plugin-excalidraw
+    enabled: true
+    options:
+      enableInteraction: true
+      darkMode: auto
+      exportPadding: 20
+    order: 50
+layout:
+  groups:
+    toolbar:
+      priority: 35
+      direction: row
+      gap: 0.5rem
+  byPageType:
+    "404":
+      positions:
+        beforeBody: []
+        left: []
+        right: []
+    content: {}
+    folder:
+      exclude:
+        - reader-mode
+      positions:
+        right: []
+    tag:
+      exclude:
+        - reader-mode
+      positions:
+        right: []
+    canvas: {}
+    bases: {}

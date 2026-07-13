@@ -1,3 +1,678 @@
 @use "./variables.scss" as *;
 
-// put your custom CSS here!
+// ---------------------------------------------------------------------------
+// minimal theme
+// small type, no chrome, quiet links, one accent.
+// ---------------------------------------------------------------------------
+
+// quartz emits its own :root font vars after this file, so overriding them here
+// loses. set the stack on the elements themselves.
+$mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+:root {
+  --line-measure: 34rem;
+}
+
+// .popover-inner explicitly sets font-family: var(--bodyFont), which resolves to
+// a font we never load and so falls back to sans — it must be listed here too
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.page-title,
+.article-title,
+.content-meta,
+.popover-inner,
+input,
+button,
+footer {
+  font-family: $mono;
+}
+
+body {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  // digits line up in columns; no coding ligatures turning != into a glyph
+  font-variant-numeric: tabular-nums;
+  font-variant-ligatures: none;
+}
+
+// tighten the page frame: content sits left of centre, generous air around it
+.page {
+  & > #quartz-body {
+    gap: 2rem;
+
+    // .center is a grid area, so the measure has to be set on its children
+    & .center {
+      padding: 0 1.5rem;
+      // grid columns are content-sized by default: without this the column grows
+      // to the full measure and overflows the viewport instead of shrinking
+      min-width: 0;
+
+      & > * {
+        max-width: min(var(--line-measure), 100%);
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      // the separator quartz emits between article and footer slot
+      & > hr {
+        border: none;
+        border-top: 1px solid var(--lightgray);
+        margin: 4rem 0 0;
+      }
+    }
+
+    // the right rail holds the table of contents (desktop, long pages only)
+    & .sidebar.right {
+      padding-top: 4rem;
+    }
+
+    & .sidebar.left {
+      gap: 0.75rem;
+
+      // on mobile this sidebar becomes a header row, where a top inset misaligns it
+      @media #{$desktop} {
+        padding-top: 4rem;
+      }
+    }
+  }
+}
+
+// 1-bit dithered portrait at the top of the sidebar, above the title.
+//
+// two plates rather than one plate + invert(): a 1-bit image cannot be
+// theme-flipped with a css filter, because inverting the ink inverts the *tones*
+// too and the portrait comes out a photographic negative. so the light plate inks
+// the dark regions in black, and the dark plate inks the light regions in white.
+.page-title::before {
+  content: "";
+  display: block;
+  // the png is 96px shown at 192px: an exact 2x integer scale, so each dither dot
+  // becomes a clean 2x2 block. coarse on purpose — it reads as a 1-bit graphic
+  // rather than a degraded photo. any non-integer scale would resample the dots.
+  width: 192px;
+  height: 192px;
+  margin-bottom: 0.75rem;
+  background-image: url("/static/portrait-light.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  // keep the dither dots crisp; the browser's smooth scaler would blur them to grey
+  image-rendering: pixelated;
+}
+
+:root[saved-theme="dark"] .page-title::before {
+  background-image: url("/static/portrait-dark.png");
+}
+
+// site title: lowercase, unemphatic, no hover flourish
+.page-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+
+  & a {
+    color: var(--dark);
+    background-image: none;
+  }
+}
+
+// headings stay close in size to the body — hierarchy comes from weight and space
+article {
+  & h1,
+  & h2,
+  & h3,
+  & h4,
+  & h5,
+  & h6 {
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.3;
+    margin: 2.5rem 0 0.75rem;
+  }
+
+  & h1 {
+    font-size: 1.25rem;
+  }
+  & h2 {
+    font-size: 1.05rem;
+  }
+  & h3,
+  & h4,
+  & h5,
+  & h6 {
+    font-size: 0.95rem;
+  }
+
+  & p,
+  & li {
+    line-height: 1.65;
+  }
+
+  & > h1:first-child {
+    margin-top: 0;
+  }
+}
+
+// links: underline only, accent on hover. no colour-by-default noise.
+a {
+  color: var(--dark);
+  text-decoration: underline;
+  text-decoration-color: var(--lightgray);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  background-image: none !important;
+  transition: color 0.1s ease, text-decoration-color 0.1s ease;
+
+  &:hover {
+    color: var(--secondary);
+    text-decoration-color: var(--secondary);
+  }
+
+  &.internal {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  &.external .external-icon {
+    opacity: 0.4;
+  }
+}
+
+// the page's own title, rendered above the article body
+.article-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 0.5rem;
+}
+
+// `description` frontmatter, rendered as an italic subtitle under the title.
+// note-properties is the only component that prints a frontmatter value, and it
+// prints an obsidian <details>/table. strip that chrome down to just the value.
+.note-properties {
+  margin: 0 0 0.6rem;
+  border: none;
+  background: none;
+
+  & .note-properties-header,
+  & .note-properties-key {
+    display: none;
+  }
+
+  & .note-properties-table,
+  & tbody,
+  & tr,
+  & td {
+    display: block;
+    border: none;
+    padding: 0;
+  }
+
+  & .note-properties-text {
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--gray);
+  }
+}
+
+// table of contents in the right rail
+.toc {
+  font-size: 0.72rem;
+  // quartz sets overflow-x:auto here, and the list below is width:100% — adding a
+  // border-left pushed it to 101% and summoned a scrollbar over a single pixel
+  overflow-x: visible;
+
+  // .toc-header is itself the collapse <button>; strip its chrome
+  & .toc-header {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    color: var(--gray);
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+
+    & h3 {
+      font-size: 0.72rem;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    // the fold chevron: it is always open, so the toggle is noise
+    & .fold {
+      display: none;
+    }
+  }
+
+  & ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 1px solid var(--lightgray);
+    box-sizing: border-box; // keep the border inside quartz's width:100%
+  }
+
+  // quartz caps the list height and scrolls it; a short toc should just be short
+  & .toc-content.overflow {
+    max-height: none;
+    overflow: visible;
+  }
+
+  & li {
+    margin: 0;
+    padding: 0.2rem 0 0.2rem 0.7rem;
+  }
+
+  & a {
+    color: var(--gray);
+    text-decoration: none;
+
+    &:hover,
+    &.in-view {
+      color: var(--secondary);
+    }
+  }
+}
+
+// backlinks: a quiet "linked from" list at the foot of the note
+.backlinks {
+  margin-top: 3rem;
+  font-size: 0.75rem;
+
+  // the component hardcodes the heading "Backlinks" and exposes no title option,
+  // so swap the wording here. (it already omits itself entirely when empty.)
+  & h3 {
+    font-size: 0;
+    font-weight: 500;
+    margin: 0 0 0.5rem;
+
+    &::before {
+      content: "linked from";
+      font-size: 0.7rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+  }
+
+  & ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  & li {
+    padding: 0.2rem 0;
+  }
+}
+
+// breadcrumbs read as a filesystem path: ~ / notes / on-prompt-injection
+.breadcrumb-container {
+  font-size: 0.7rem;
+  color: var(--gray);
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.35rem;
+
+  & a {
+    color: var(--gray);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--secondary);
+    }
+  }
+
+  // each crumb wraps its link and a <p> separator; <p> is block-level, so
+  // without this the "/" drops onto its own line
+  & .breadcrumb-element {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+
+    & p {
+      margin: 0;
+    }
+  }
+}
+
+// the metadata band under the title: a hairline-ruled strip of date + reading
+// time, keeping the technical density without adding chrome
+.content-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.6rem;
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--lightgray);
+  border-bottom: 1px solid var(--lightgray);
+  font-variant-numeric: tabular-nums;
+
+  & > * {
+    margin: 0;
+  }
+
+  // a middot between fields, in place of the component's trailing comma
+  & > * + *::before {
+    content: "·";
+    margin-right: 0.6rem;
+    color: var(--lightgray);
+  }
+}
+
+// tags as boxed #chips, sitting just under the metadata band
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+
+  & li {
+    margin: 0;
+  }
+
+  & a,
+  & .tag-link {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: var(--gray);
+    border: 1px solid var(--lightgray);
+    border-radius: 2px;
+    padding: 0.05rem 0.35rem;
+    text-decoration: none;
+
+    &::before {
+      content: "#";
+      opacity: 0.5;
+    }
+
+    &:hover {
+      color: var(--secondary);
+      border-color: var(--secondary);
+    }
+  }
+}
+
+// link previews: square and hairlined, like everything else
+.popover > .popover-inner {
+  border-radius: 0;
+  box-shadow: none;
+  border: 1px solid var(--lightgray);
+  font-size: 0.8rem;
+}
+
+// the toolbar (search + dark mode) — icon-only, low contrast until hovered
+.toolbar {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// footer: a single dim line, aligned to the text column
+
+// blockquotes as a thin accent rule rather than a heavy bar
+blockquote {
+  border-left: 2px solid var(--tertiary);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--darkgray);
+}
+
+// code: no boxes, just a tint
+code {
+  font-size: 0.85em;
+  padding: 0.1em 0.3em;
+  border: none;
+  background-color: var(--highlight);
+}
+
+pre {
+  border: 1px solid var(--lightgray);
+  border-radius: 2px;
+}
+
+// ---------------------------------------------------------------------------
+// code blocks: terminal-monochrome. code is body text; only comments recede and
+// strings take the accent. shiki colors each token via inline --shiki-* vars, so
+// the overrides below have to out-specify `code[data-theme] span` in syntax.scss.
+// ---------------------------------------------------------------------------
+figure[data-rehype-pretty-code-figure],
+.code-block {
+  position: relative;
+}
+
+pre {
+  position: relative;
+  padding: 1.6rem 0 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  background-color: var(--highlight);
+  border: 1px solid var(--lightgray);
+  border-radius: 0;
+
+  // the language label, printed on the block's top edge
+  &[data-language]::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0.25rem 0.9rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray);
+    border-bottom: 1px solid var(--lightgray);
+  }
+
+  & > code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  // monochrome: every token inherits body text colour...
+  & code[data-theme] span[data-token-type] {
+    color: var(--darkgray);
+  }
+
+  // ...except the two that carry meaning
+  & code[data-theme] span[data-token-type="comment"] {
+    color: var(--gray);
+    font-style: italic;
+  }
+
+  & code[data-theme] span[data-token-type="string"] {
+    color: var(--secondary);
+  }
+
+  // line numbers: present but recessive
+  & code[data-line-numbers] > span[data-line]::before {
+    color: var(--lightgray);
+  }
+
+  // a hairline scrollbar instead of the chunky default slab
+  scrollbar-width: thin;
+  scrollbar-color: var(--lightgray) transparent;
+
+  &::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--lightgray);
+    border-radius: 0;
+  }
+}
+
+// display math gets room to breathe and scrolls if a formula is very wide
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
+
+// technical tables: hairlines only, no zebra fill
+table {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+
+  & th,
+  & td {
+    border: 1px solid var(--lightgray);
+    padding: 0.3rem 0.6rem;
+    text-align: left;
+  }
+
+  & th {
+    font-weight: 600;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.7rem;
+  }
+}
+
+// wide content scrolls inside itself rather than widening the page
+pre,
+table,
+.table-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+// the recent-notes feed in the sidebar
+.recent-notes {
+  & h3 {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray);
+    text-transform: lowercase;
+    margin: 0 0 0.5rem;
+  }
+
+  & .recent-ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  & .recent-li {
+    margin-bottom: 0.75rem;
+  }
+
+  & .desc h3 {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--dark);
+    text-transform: none;
+    margin: 0;
+  }
+
+  & .meta {
+    font-size: 0.7rem;
+    color: var(--gray);
+    margin: 0.1rem 0 0;
+  }
+
+  // quartz keeps a virtual "Not Found" page in allFiles, and recent-notes only
+  // exposes `filter` as a function — which the yaml config cannot express.
+  & .recent-li:has(a[href$="404"]) {
+    display: none;
+  }
+}
+
+// a lightweight "index list" for the landing page:
+// wrap link lists in a section and dates line up on the right.
+.index-list {
+  & ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  & li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--lightgray);
+  }
+
+  & li a {
+    font-weight: 400;
+  }
+
+  & li em {
+    flex-shrink: 0;
+    font-style: normal;
+    font-size: 0.75rem;
+    color: var(--gray);
+  }
+}
+
+// the site footer proper ("created with quartz", links)
+footer {
+  // border-box so the padding below counts inside max-width, otherwise the
+  // footer is 1.5rem wider than the viewport and the page scrolls sideways
+  box-sizing: border-box;
+  max-width: min(calc(var(--line-measure) + 1.5rem), 100%);
+  margin: 1.5rem 0 3rem;
+  padding-left: 1.5rem; // match .center's padding so it lines up with the text
+  font-size: 0.75rem;
+  color: var(--gray);
+
+  // the hardcoded "created with quartz" credit
+  & > p {
+    display: none;
+  }
+
+  & ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  & li + li::before {
+    content: "·";
+    margin-right: 0.6rem;
+    color: var(--lightgray);
+  }
+}
+
+@media #{$mobile} {
+  .page > #quartz-body .center {
+    padding: 0 1.5rem;
+  }
+}

@@ -107,6 +107,12 @@ async function mouseEnterHandler(
       elts.forEach((elt) => popoverInner.appendChild(elt))
   }
 
+  // content types with no renderer above (e.g. application/xml for the rss feed)
+  // leave the popover empty — showing it renders a blank box
+  if (!popoverInner.hasChildNodes()) {
+    return
+  }
+
   if (!!document.getElementById(popoverId)) {
     return
   }
