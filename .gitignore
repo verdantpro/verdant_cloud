@@ -1,5 +1,7 @@
 .DS_Store
 .gitignore
+*.swp
+*.swo
 node_modules
 public
 prof
