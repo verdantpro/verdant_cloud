@@ -4,7 +4,7 @@ description: security practitioner — dfir, incident response, threat intellige
 unlisted: true
 ---
 
-Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA). Open-source contributor and accepted HOPE 26 speaker.
+Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA). Accepted HOPE 26 speaker.
 
 [email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro)
 
@@ -52,8 +52,6 @@ Hands-on security practitioner experienced in incident response and digital fore
 - Monitored key network infrastructure, issuing alerts and escalating to the appropriate teams.
 
 ## projects & community
-
-**scope-recon** — async CLI that queries 12 concurrent threat-intelligence APIs with a live TUI for rapid IOC enrichment. Also author of **cryptkeeper**, a cross-platform forensic collection tool.
 
 **Threat-intel & NSM homelab** — self-hosted OpenCTI + MISP threat-intelligence platform alongside a Proxmox NSM stack (Suricata, Wazuh SIEM, Zeek feeding Splunk, OPNsense, Nebula VPN). Ran live malware investigations (FormBook / XLoader, SmartApeSG, PhantomStealer) using Zeek logs in Splunk; provisioned VMs via Terraform. Runs on owned hardware — five Dell servers.
 
