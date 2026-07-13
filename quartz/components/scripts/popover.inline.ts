@@ -14,6 +14,12 @@ async function mouseEnterHandler(
     return
   }
 
+  // tag links preview a tag listing page, which says nothing a reader wants:
+  // the tag name, a count, and a link back to the note they are already on
+  if (link.classList.contains("tag-link")) {
+    return
+  }
+
   async function setPosition(popoverElement: HTMLElement) {
     const { x, y } = await computePosition(link, popoverElement, {
       strategy: "fixed",

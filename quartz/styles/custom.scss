@@ -407,12 +407,30 @@ a {
   }
 }
 
-// link previews: square and hairlined, like everything else
+// link previews: square and hairlined, like everything else. quartz defaults to
+// 30rem wide against a 34rem reading column — near full width, so a preview
+// covers the text it is meant to annotate.
 .popover > .popover-inner {
+  width: 22rem;
+  max-height: 15rem;
   border-radius: 0;
   box-shadow: none;
   border: 1px solid var(--lightgray);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+
+  // the preview is a miniature, so its furniture should shrink too
+  & .article-title {
+    font-size: 0.95rem;
+  }
+
+  & .content-meta {
+    font-size: 0.65rem;
+    padding: 0.4rem 0;
+  }
+
+  & .tags {
+    display: none; // chips inside a 22rem preview are noise
+  }
 }
 
 // the toolbar (search + dark mode) — icon-only, low contrast until hovered
