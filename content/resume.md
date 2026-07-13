@@ -6,7 +6,7 @@ unlisted: true
 
 Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA). Accepted HOPE 26 speaker.
 
-[email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro)
+[email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro) · [linkedin](https://www.linkedin.com/in/justin-walters-36a579256/)
 
 ## experience
 
