@@ -74,5 +74,3 @@ Hands-on security practitioner experienced in incident response and digital fore
 ## education
 
 Coursework toward B.A. in English — University of Baltimore, 2008–2011
-
-Baltimore Polytechnic Institute — high school diploma, 2003–2007
