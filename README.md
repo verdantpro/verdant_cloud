@@ -28,11 +28,26 @@ npx quartz build            # write static output to public/
 Minimal and technical. System monospace throughout, a near-black/off-white base
 with one green accent, hairline rules, square corners.
 
+**Zero third-party requests.** A full page load contacts no external host at all —
+verified in a browser, not by grep. `/colophon` says so publicly, so this is a
+claim a reader can check. Keeping it true means the following stay off, and any
+of them can silently break it:
+
+| off               | why                                                            |
+| ----------------- | -------------------------------------------------------------- |
+| `analytics`       | was `plausible`, emitting no script — collecting nothing        |
+| `latex` (katex)   | fetches `copy-tex` from cdn.jsdelivr.net at runtime             |
+| `mermaid`         | lazy-imports from cdnjs.cloudflare.com                          |
+| cdnjs `preconnect` | patched out of `Head.tsx` — see below; **not** gated by config |
+
+Re-enabling math or diagrams means self-hosting their assets, or softening the
+colophon's wording. Don't leave the claim false.
+
 **No webfonts are fetched.** `fontOrigin: local` plus the disabled `fonts`
-plugin means zero external requests. The font names in `quartz.config.yaml`
-(`IBM Plex Mono`) exist only to feed the og-image renderer, which needs a real
-fetchable font to lay out social cards — they are not what the site displays.
-The actual stack is pinned in `custom.scss`.
+plugin. The font names in `quartz.config.yaml` (`IBM Plex Mono`) exist only to
+feed the og-image renderer, which needs a real fetchable font to lay out social
+cards — they are not what the site displays. The actual stack is pinned in
+`custom.scss`.
 
 > **Gotcha:** anything in Quartz that reaches for `var(--bodyFont)` will render
 > in a **sans fallback**, because that variable resolves to a font we never load.
@@ -76,7 +91,14 @@ serves cached JS and CSS, which has twice looked like a broken fix.
 
 ## Local modifications to Quartz
 
-Two changes live outside `custom.scss` and will conflict when pulling upstream:
+These live outside `custom.scss` and will conflict when pulling upstream:
+
+**`quartz/components/Head.tsx`** — removed an unconditional
+`<link rel="preconnect" href="https://cdnjs.cloudflare.com">`. Quartz emits it on
+every page to warm up mermaid's lazy import, **outside any config gate** — so
+disabling mermaid does not remove it. It opened a connection to Cloudflare on
+every visit, handing each visitor's IP and user-agent to a third party whether or
+not a diagram existed. Re-add it if mermaid is ever turned back on.
 
 **`quartz/components/scripts/popover.inline.ts`** — two changes, both tracked in
 git. First, bail out of empty popovers: content types with no renderer (e.g.
