@@ -4,7 +4,7 @@ description: security practitioner — dfir, incident response, threat intellige
 unlisted: true
 ---
 
-Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python, Go, and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA). Open-source contributor and accepted HOPE 26 speaker.
+Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA). Open-source contributor and accepted HOPE 26 speaker.
 
 [email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro)
 
@@ -19,7 +19,7 @@ Hands-on security practitioner experienced in incident response and digital fore
 - Investigated suspicious Microsoft 365 and Azure activity during cloud-hosted engagements, identifying account compromise and providing remediation guidance.
 - Cataloged ransomware ransom notes and performed TLSH similarity analysis to correlate threat actor TTPs against the MITRE ATT&CK framework and identify malware variants and attribution.
 - Deployed Velociraptor across 700+ endpoints for mass forensic collection; built and maintained IR infrastructure including Timesketch for timeline analysis.
-- Performed feasibility analysis to determine whether affected files were corrupted or encrypted, informing high-stakes recovery and ransom-payment decisions; coordinated with crisis management teams, outside counsel, and cyber insurance partners, and built Python and Go tooling to automate repetitive collection and analysis tasks.
+- Performed feasibility analysis to determine whether affected files were corrupted or encrypted, informing high-stakes recovery and ransom-payment decisions; coordinated with crisis management teams, outside counsel, and cyber insurance partners, and built Python tooling to automate repetitive collection and analysis tasks.
 
 ### Security Engineer — ECS Federal (supporting CMS)
 
@@ -38,7 +38,7 @@ Hands-on security practitioner experienced in incident response and digital fore
 - Integrated Cisco ASA with Duo multi-factor authentication and Windows Active Directory so Cisco AnyConnect VPN users could authenticate with AD credentials and Duo MFA.
 - Performed server migrations on Windows and Linux, primarily of web applications and databases; installed, configured, secured, and troubleshot software across both platforms.
 - Provisioned and restricted server access via operating system and network firewall rules; crafted DNS records to provide global access to customer servers.
-- Used the Cloudflare API to create, update, and manage customer accounts; scripted in Python and Go.
+- Used the Cloudflare API to create, update, and manage customer accounts; scripted in Python.
 - Acted as an escalation point for Tier 1/2 support engineers, and worked directly with customers to scope, deliver, and document infrastructure projects through the full engagement lifecycle.
 
 ### National IT Service Desk Coordinator — RadNet
@@ -53,7 +53,7 @@ Hands-on security practitioner experienced in incident response and digital fore
 
 ## projects & community
 
-**scope-recon** — async Rust CLI that queries 12 concurrent threat-intelligence APIs with a live TUI for rapid IOC enrichment. Also author of **cryptkeeper**, a cross-platform Go collection tool.
+**scope-recon** — async CLI that queries 12 concurrent threat-intelligence APIs with a live TUI for rapid IOC enrichment. Also author of **cryptkeeper**, a cross-platform forensic collection tool.
 
 **Threat-intel & NSM homelab** — self-hosted OpenCTI + MISP threat-intelligence platform alongside a Proxmox NSM stack (Suricata, Wazuh SIEM, Zeek feeding Splunk, OPNsense, Nebula VPN). Ran live malware investigations (FormBook / XLoader, SmartApeSG, PhantomStealer) using Zeek logs in Splunk; provisioned VMs via Terraform. Runs on owned hardware — five Dell servers.
 
@@ -67,7 +67,7 @@ Hands-on security practitioner experienced in incident response and digital fore
 | SIEM & monitoring        | Splunk, Zeek, Suricata, Snort, Wazuh, Security Onion, Gurucul GRA UEBA, SIEM operations & tuning, log analysis, threat hunting                                                              |
 | Threat intelligence      | OpenCTI, MISP, IOC enrichment, TLSH similarity analysis, threat actor TTP correlation                                                                                                      |
 | Offensive & assessment   | Nmap, Metasploit, Burp Suite, SQLMap                                                                                                                                                       |
-| Engineering & automation | Python, Go, Bash, Rust, Git, Ansible, Terraform (IaC), Docker, system hardening                                                                                                            |
+| Engineering & automation | Python, Bash, Git, Ansible, Terraform (IaC), Docker, system hardening                                                                                                                       |
 | Systems & infrastructure | Linux and Windows system administration, VMware ESXi, Proxmox, Active Directory, server and PC builds, homelab operations                                                                  |
 | Platforms & cloud        | Windows, Linux, macOS, Microsoft 365, Azure, AWS, GCP, networking (TCP/IP, DNS, VLANs, Cisco ASA, OPNsense)                                                                                |
 
