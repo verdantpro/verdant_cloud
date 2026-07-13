@@ -724,4 +724,33 @@ footer {
   .page > #quartz-body .center {
     padding: 0 1.5rem;
   }
+
+  // on mobile quartz collapses the left sidebar into a header row. the portrait
+  // is sized for a 320px desktop rail, so at phone width it swallows the screen
+  // and strands the site title underneath it. lay the header out as a proper row:
+  // portrait + title on the left, search and theme toggle on the right.
+  .page > #quartz-body .sidebar.left {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 1.5rem 1.5rem 0;
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+
+    // 96px is the plate's NATIVE size — half the desktop 192px, which is an exact
+    // 1:1 pixel map. any other value resamples the dither dots into grey mush.
+    &::before {
+      width: 96px;
+      height: 96px;
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
+  }
 }
