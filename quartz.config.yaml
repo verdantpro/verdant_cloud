@@ -243,9 +243,12 @@ plugins:
     layout:
       position: afterBody
       priority: 10
-  # the "created with quartz" credit is hardcoded in the component (only `links`
-  # is configurable), so custom.scss hides that paragraph and keeps these links
-  - source: github:quartz-community/footer
+  # vendored locally (tracked in git) rather than fetched: the upstream footer
+  # hardcodes a "created with quartz" credit with no option to disable it, and
+  # patching the fetched copy in .quartz/ meant CI — which refetches — would
+  # silently emit different html than a local build. quartz is credited on
+  # /colophon instead.
+  - source: ./plugins/footer
     enabled: true
     options:
       links:

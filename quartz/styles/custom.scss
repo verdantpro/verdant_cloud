@@ -645,13 +645,6 @@ footer {
   font-size: 0.75rem;
   color: var(--gray);
 
-  // belt and braces: the "created with quartz" credit <p> is patched out of
-  // .quartz/plugins/footer, but that is fetched code and a refetch would restore
-  // it. this keeps it hidden if that happens.
-  & > p {
-    display: none;
-  }
-
   & ul {
     display: flex;
     flex-wrap: wrap;

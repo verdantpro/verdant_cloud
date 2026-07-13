@@ -13,6 +13,5 @@ major cloud providers offer far more than a standard vps provider, and i figure 
 
 google cloud is my target; it aligns well with the technologies i enjoy working with... i prefer linux and open source software, google has excellent documentation, and the cloud native approach matches the direction i want to take my career.
 
-to facilitate this goal, i will be comnpleting the following the path at: https://cloudresumechallenge.dev/docs/the-challenge/googlecloud/
-
+to facilitate this goal, i am working through the [cloud resume challenge (google cloud)](https://cloudresumechallenge.dev/docs/the-challenge/googlecloud/).
 
