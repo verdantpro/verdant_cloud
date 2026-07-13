@@ -407,6 +407,47 @@ a {
   }
 }
 
+// the 404 renders in quartz's "minimal" frame: no sidebars, and the config
+// clears its layout, so it inherits none of the page furniture. without this it
+// sits flush in the top-left corner and is the only page that looks unfinished.
+// note the #quartz-body in the selector: the general rule above is
+// `.page > #quartz-body .center`, and an id outranks any number of classes —
+// without it the padding here silently loses the cascade
+.page[data-frame="minimal"] {
+  & > #quartz-body > .center.minimal {
+    // base.scss forces min-width:100% here too; reset it or the column stays
+    // full-width and the footer below cannot be aligned to it.
+    // border-box to match the footer, whose padding otherwise offsets it by 24px
+    box-sizing: border-box;
+    min-width: 0;
+    width: min(var(--line-measure), 100%);
+    justify-self: center;
+    padding: 8rem 1.5rem 0;
+
+    & h1 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+
+    & p {
+      color: var(--gray);
+      margin: 0 0 1.5rem;
+    }
+  }
+
+  // the footer is a grid item, so `margin: auto` resolves to 0 — grid centres
+  // with justify-self. base.scss also sets `min-width: 100%` on it, and
+  // min-width beats max-width, so the cap below does nothing without resetting it
+  & footer {
+    justify-self: center;
+    min-width: 0;
+    width: min(var(--line-measure), 100%);
+    margin: 4rem 0 3rem;
+    padding: 0 1.5rem;
+  }
+}
+
 // link previews: square and hairlined, like everything else. quartz defaults to
 // 30rem wide against a 34rem reading column — near full width, so a preview
 // covers the text it is meant to annotate.

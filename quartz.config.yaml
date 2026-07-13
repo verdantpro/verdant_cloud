@@ -203,6 +203,9 @@ plugins:
     layout:
       position: beforeBody
       priority: 20
+      # a reading time on the landing page is meaningless — nobody budgets a
+      # minute for a front door, and it makes the index look like a blog post
+      condition: not-index
   - source: github:quartz-community/tag-list
     enabled: true
     layout:
