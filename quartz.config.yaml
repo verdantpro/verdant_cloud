@@ -4,8 +4,10 @@ configuration:
   pageTitleSuffix: ""
   enableSPA: true
   enablePopovers: true
-  analytics:
-    provider: plausible
+  # no analytics: /colophon claims no third-party scripts run on this site, and
+  # that claim stays true. (the plausible provider that used to be set here
+  # emitted no script anyway — it was collecting nothing.)
+  analytics: null
   locale: en-US
   baseUrl: verdantprotocol.com
   ignorePatterns:
@@ -68,7 +70,10 @@ plugins:
       highlight: true
       wikilinks: true
       callouts: true
-      mermaid: true
+      # off: mermaid lazy-imports from cdnjs.cloudflare.com, and emits a
+      # <link rel="preconnect"> to cloudflare on *every* page whether or not a
+      # diagram exists — handing every visitor's ip to a third party
+      mermaid: false
       parseTags: true
       parseArrows: true
       parseBlockReferences: true
@@ -96,8 +101,12 @@ plugins:
   - source: github:quartz-community/description
     enabled: true
     order: 70
+  # off: katex pulls copy-tex from cdn.jsdelivr.net at runtime, which made the
+  # colophon's "no third-party scripts run on this page" claim false. nothing on
+  # the site uses math. re-enabling means self-hosting the katex assets or
+  # softening that claim.
   - source: github:quartz-community/latex
-    enabled: true
+    enabled: false
     options:
       renderEngine: katex
     order: 80

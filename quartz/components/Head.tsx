@@ -59,7 +59,10 @@ export default (() => {
             )}
           </>
         )}
-        <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
+        {/* quartz preconnects to cdnjs unconditionally, to warm up mermaid's lazy
+            import. mermaid is disabled and nothing else on this site uses cdnjs, so
+            the preconnect only handed every visitor's ip to cloudflare for nothing.
+            re-add it if mermaid is ever turned back on. */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
         <meta name="og:site_name" content={cfg.pageTitle}></meta>
