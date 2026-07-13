@@ -56,13 +56,33 @@ dots and ruins it.** Regenerate rather than resize:
 python3 scripts/dither-portrait.py path/to/photo.jpg   # needs pillow
 ```
 
+### Overriding Quartz's CSS
+
+Three traps in `base.scss` that each look identical from the outside ("my rule
+isn't applying") and have different causes. All three cost real time on the 404:
+
+- The general column rule is `.page > #quartz-body .center` — it contains an
+  **ID**, and an ID outranks any number of classes. A class-only selector loses
+  silently, and can apply some properties while losing others.
+- `base.scss` sets **`min-width: 100%`** on `.center` and `footer`. `min-width`
+  beats `max-width`, so a width cap does nothing until you reset it to `0`.
+- `#quartz-body` is a **grid**. `margin: auto` on a grid item resolves to `0`;
+  centre with `justify-self`. Mind `box-sizing` too — the footer is `border-box`
+  and `.center` is not, which offsets them by exactly their padding.
+
+Measure with `getComputedStyle` rather than trusting a screenshot. And if a
+change seems not to apply at all, hard-reload before re-debugging: the dev server
+serves cached JS and CSS, which has twice looked like a broken fix.
+
 ## Local modifications to Quartz
 
 Two changes live outside `custom.scss` and will conflict when pulling upstream:
 
-**`quartz/components/scripts/popover.inline.ts`** — bail out of empty popovers.
-Content types with no renderer (e.g. `application/xml`, i.e. the RSS link)
-produced a blank floating box on hover. Tracked in git.
+**`quartz/components/scripts/popover.inline.ts`** — two changes, both tracked in
+git. First, bail out of empty popovers: content types with no renderer (e.g.
+`application/xml`, i.e. the RSS link) produced a blank floating box on hover.
+Second, skip `.tag-link` entirely — a tag popover previewed a tag listing page,
+covering the article to report the tag name and a count.
 
 **`plugins/footer/`** — a vendored footer, pointed at from the config by local
 path (`source: ./plugins/footer`). The upstream `@quartz-community/footer`
@@ -97,11 +117,12 @@ and that `quartz/components/scripts/popover.inline.ts` will need merge care.
   **not** GitHub/Cloudflare Pages. Standing up the abstraction is the point of
   the exercise. On that route DNS is an A record to the load balancer IP, so
   `public/CNAME` (a GitHub Pages artifact) becomes dead weight.
-- **No `/resume`** — the one page the challenge actually requires.
 - `analytics: plausible` is set in the config but **emits no script** — it is
   collecting nothing. Note `/colophon` claims no third-party scripts run, which
   is currently true. Keep it true, or change the claim.
-- The **404 page** is Quartz's default and does not match the theme.
-- **OG images** render with Quartz's default palette, so link previews on
-  Slack/Twitter won't look like the site. Worth fixing before sharing links.
+- The **404** uses the site's layout now, but the copy is still Quartz's
+  ("Either this page is private or doesn't exist") — that string is hardcoded in
+  the built-in emitter, not configurable.
 - `content/colophon.md` has no `hosting` row — add one once a platform is picked.
+- A **"start here"** list on the homepage is waiting on there being more than one
+  note worth pointing at. The `.index-list` utility class is ready for it.
