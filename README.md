@@ -139,9 +139,8 @@ and that `quartz/components/scripts/popover.inline.ts` will need merge care.
   **not** GitHub/Cloudflare Pages. Standing up the abstraction is the point of
   the exercise. On that route DNS is an A record to the load balancer IP, so
   `public/CNAME` (a GitHub Pages artifact) becomes dead weight.
-- `analytics: plausible` is set in the config but **emits no script** — it is
-  collecting nothing. Note `/colophon` claims no third-party scripts run, which
-  is currently true. Keep it true, or change the claim.
+- **No analytics at all** — that is now a deliberate choice, not an omission. See
+  the zero-third-party table above before adding any.
 - The **404** uses the site's layout now, but the copy is still Quartz's
   ("Either this page is private or doesn't exist") — that string is hardcoded in
   the built-in emitter, not configurable.
