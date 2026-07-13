@@ -10,4 +10,4 @@ most of what's here is unfinished on purpose — notes get revised in place rath
 
 ## elsewhere
 
-[resume](/resume) · [email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro)
+[resume](/resume) · [email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro) · [linkedin](https://www.linkedin.com/in/justin-walters-36a579256/)
