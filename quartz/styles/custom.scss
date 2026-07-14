@@ -33,7 +33,9 @@ footer {
 }
 
 body {
-  font-size: 0.85rem;
+  // 0.9rem = 14.4px. monospace renders small for its nominal size, and 13.6px was
+  // hard work over an essay. the 34rem measure still lands ~65 characters.
+  font-size: 0.9rem;
   letter-spacing: 0;
   // digits line up in columns; no coding ligatures turning != into a glyph
   font-variant-numeric: tabular-nums;
@@ -184,12 +186,21 @@ a {
   }
 }
 
-// the page's own title, rendered above the article body
+// the header block — breadcrumb, title, subtitle, meta band, tags — gets a clear
+// pause before the body starts. set here rather than on .tags so pages without
+// tags (resume, colophon) get the same gap.
+.page-header {
+  margin-bottom: 2rem;
+}
+
+// the page's own title, rendered above the article body. the loudest thing on the
+// page on purpose — hierarchy comes from one element being clearly dominant, not
+// from everything shouting. 1.5rem against a 0.9rem body is a ~1.7x step.
 .article-title {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: 0;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.6rem;
 }
 
 // `description` frontmatter, rendered as an italic subtitle under the title.
@@ -355,7 +366,7 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
-  padding: 0.6rem 0;
+  padding: 0.85rem 0;
   border-top: 1px solid var(--lightgray);
   border-bottom: 1px solid var(--lightgray);
   font-variant-numeric: tabular-nums;
@@ -379,7 +390,7 @@ a {
   gap: 0.4rem;
   list-style: none;
   padding: 0;
-  margin: 0.75rem 0 0;
+  margin: 1rem 0 0;
 
   & li {
     margin: 0;
@@ -638,8 +649,10 @@ iframe {
     margin: 0;
   }
 
+  // entries need to read as separate items, not one block of text: the gap
+  // between two notes must clearly exceed the gap between a note and its date
   & .recent-li {
-    margin-bottom: 0.75rem;
+    margin-bottom: 1.4rem;
   }
 
   & .desc h3 {
