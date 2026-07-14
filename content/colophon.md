@@ -3,7 +3,7 @@ title: colophon
 unlisted: true
 ---
 
-this site is built with [quartz](https://quartz.jzhao.xyz), a static site generator that publishes markdown as linked hypertext. notes are written in plain markdown and rendered at build time — there is no database and no javascript framework.
+this site is built with [quartz](https://quartz.jzhao.xyz), a static site generator that publishes markdown as linked hypertext. notes are written in plain markdown and rendered at build time. no javascript framework. one dynamodb table holds the visit counts; everything else is static files.
 
 | layer     | choice                                                 |
 | --------- | ------------------------------------------------------ |
