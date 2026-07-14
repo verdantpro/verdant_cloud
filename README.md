@@ -229,13 +229,15 @@ in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
   `.quartz/` is gitignored. The guide's sample workflow shows
   `npm ci && npx quartz build`; that will fail here. This is also why the footer
   is vendored rather than patched (see above).
-- **Clean URLs.** Quartz links to `/notes/why-cloud`, but the object is
-  `notes/why-cloud.html`. CloudFront's default-root-object only applies at `/`,
-  not in subpaths. Fixed with a viewer-request CloudFront Function that rewrites
-  the URI. **This repo has no `fix-routing.sh`** — the build emits flat `.html`
-  files, so the rewrite is `req.uri = uri + ".html"`, *not* `+ "/index.html"`.
-  Adopting the folder convention instead means adding that script first. Pick one
-  and write down which.
+- **Clean URLs — settled: folder convention.** Quartz links to
+  `/notes/why-cloud`, but the build emits `notes/why-cloud.html`, and
+  CloudFront's default-root-object only applies at `/`, not in subpaths.
+  `./fix-routing.sh` runs after `quartz build` and rewrites every flat
+  `page.html` into `page/index.html` (leaving `index.html` and `404.html`
+  alone), so the viewer-request CloudFront Function rewrites
+  `req.uri = uri + "/index.html"` — *not* `+ ".html"`. **The build is not
+  deployable without that script**; any CI job must run it between
+  `quartz build` and the S3 sync.
 - **A private-bucket miss surfaces as 403, not 404** — map CloudFront's 403 error
   response to the 404 page, or the themed 404 never renders.
 - **`public/CNAME` cannot simply be deleted.** It is *emitted on every build* by

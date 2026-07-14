@@ -265,7 +265,7 @@ plugins:
     options:
       links:
         colophon: /colophon
-        source: https://github.com/verdantpro
+        source: https://github.com/verdantpro/verdant_cloud
         rss: /index.xml
   # vendored, like the footer. renders `status:` frontmatter as a dot + label —
   # note-properties prints frontmatter as an undifferentiated table row, with no
