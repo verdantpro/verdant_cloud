@@ -132,13 +132,56 @@ The full Quartz history was kept (~1878 commits), so `git merge upstream/v5`
 stays straightforward. It also means the contributor graph is mostly Jacky's,
 and that `quartz/components/scripts/popover.inline.ts` will need merge care.
 
+## Deploy target (AWS)
+
+Nothing publishes yet. The target is the [cloud resume challenge, AWS
+edition](https://cloudresumechallenge.dev/docs/the-challenge/aws/) — **not**
+GitHub/Cloudflare Pages. Standing up the abstraction is the point of the exercise.
+
+Originally planned on GCP; switched to AWS after the GCP account was blocked at
+signup. AWS is also the better fit here: HTTPS needs no paid load balancer
+(CloudFront + a free ACM cert), and the bucket can stay **completely private**.
+
+```
+public/  --[GitHub Actions, OIDC role]-->  S3 (private, Block Public Access on)
+                                             |  Origin Access Control
+                                             v
+                                          CloudFront  + ACM cert (us-east-1 only)
+                                             |        + CloudFront Function (clean URLs)
+                                             v
+                                          Route 53  A/AAAA alias --> distribution
+```
+
+Backend (separate repo): API Gateway HTTP API → Lambda (Python) → DynamoDB, all
+in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
+
+### Gotchas this repo already knows about
+
+- **CI must run `npx quartz plugin install` before `quartz build`.** A clean
+  checkout cannot build without it — `Head.tsx` imports a generated
+  `.quartz/plugins` index that does not exist until plugins are installed, and
+  `.quartz/` is gitignored. The guide's sample workflow shows
+  `npm ci && npx quartz build`; that will fail here. This is also why the footer
+  is vendored rather than patched (see above).
+- **Clean URLs.** Quartz links to `/notes/why-cloud`, but the object is
+  `notes/why-cloud.html`. CloudFront's default-root-object only applies at `/`,
+  not in subpaths. Fixed with a viewer-request CloudFront Function that rewrites
+  the URI. **This repo has no `fix-routing.sh`** — the build emits flat `.html`
+  files, so the rewrite is `req.uri = uri + ".html"`, *not* `+ "/index.html"`.
+  Adopting the folder convention instead means adding that script first. Pick one
+  and write down which.
+- **A private-bucket miss surfaces as 403, not 404** — map CloudFront's 403 error
+  response to the 404 page, or the themed 404 never renders.
+- **`public/CNAME` cannot simply be deleted.** It is *emitted on every build* by
+  the `cname` plugin (from `baseUrl`) — a GitHub Pages artifact, useless on
+  CloudFront. Disable the plugin in `quartz.config.yaml`; removing the file just
+  regenerates it.
+- **`.node-version` says v22.16.0** and the guide's workflow reads it via
+  `node-version-file`, but this machine currently runs v26. CI will build on 22.
+  Reconcile before trusting a green pipeline.
+
 ## Not done yet
 
-- **No deploy.** Nothing publishes yet. The target is GCS + load balancer + CDN
-  (per the [cloud resume challenge](https://cloudresumechallenge.dev/docs/the-challenge/googlecloud/)) —
-  **not** GitHub/Cloudflare Pages. Standing up the abstraction is the point of
-  the exercise. On that route DNS is an A record to the load balancer IP, so
-  `public/CNAME` (a GitHub Pages artifact) becomes dead weight.
 - **No analytics at all** — that is now a deliberate choice, not an omission. See
   the zero-third-party table above before adding any.
 - The **404** uses the site's layout now, but the copy is still Quartz's
