@@ -286,8 +286,6 @@ plugins:
     layout:
       position: left
       priority: 45
-      # same reason as recent-notes: mobile collapses the rail into a header row
-      display: desktop-only
   - source: github:quartz-community/recent-notes
     enabled: true
     options:
@@ -300,9 +298,6 @@ plugins:
     layout:
       position: left
       priority: 40
-      # the mobile layout collapses the left sidebar into a header row, which a
-      # dated list overflows. mobile readers get /notes and "start here" instead.
-      display: desktop-only
   - source: github:quartz-community/spacer
     enabled: true
     options: {}

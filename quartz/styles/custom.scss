@@ -1023,4 +1023,61 @@ body[data-slug="index"] .center > .page-header .article-title::after {
       flex-shrink: 0;
     }
   }
+
+  // recent + tags used to be desktop-only, which left the phone with no route to
+  // a single note: the header row carries no nav, and the homepage links only to
+  // /resume. they belong here — they are the only index of the garden. the header
+  // row above is `flex-wrap: wrap`, so a 100% basis drops each onto its own full
+  // -width line beneath it rather than squeezing into the row.
+  .page > #quartz-body .sidebar.left > .recent-notes,
+  .page > #quartz-body .sidebar.left > .tag-index {
+    flex-basis: 100%;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  // the dated list is what overflowed a phone: stacked title-over-date, five deep,
+  // it pushes the article itself below the fold on every note page. on mobile the
+  // date rides on the same line as the title, and the list is capped at three —
+  // this is a way in, not the ledger. /notes and the tag pages hold everything.
+  .recent-notes {
+    & .recent-li {
+      margin-bottom: 0.55rem;
+    }
+
+    & .section {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    & .meta {
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    & .recent-li:nth-child(n + 4) {
+      display: none;
+    }
+  }
+
+  // the desktop tag index is a ruled column: tag left, count right. at phone width
+  // that column is mostly empty space, so collapse it into a wrapped chip row and
+  // drop the counts — on a garden this small they carry no information the tag
+  // page won't give you.
+  .tag-index ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.9rem;
+  }
+
+  .tag-index li {
+    border: none;
+    padding: 0;
+  }
+
+  .tag-index .tag-index-count {
+    display: none;
+  }
 }
