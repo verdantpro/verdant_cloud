@@ -1,5 +1,5 @@
 ---
-title: verdant
+title: verdant protocol
 ---
 
 hi, i'm justin. this is where i think out loud.
