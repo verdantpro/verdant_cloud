@@ -2,6 +2,7 @@
 title: on ai writing...
 date: 2026-07-12
 description: reasons why i stopped using ai to write for me
+status: stable
 tags:
   - llms
   - writing

@@ -20,7 +20,7 @@ npx quartz build            # write static output to public/
 | `quartz.config.yaml`        | theme, plugins, layout                     |
 | `quartz/styles/custom.scss` | all custom styling                         |
 | `quartz/static/`            | portrait plates, favicon                   |
-| `plugins/footer/`           | vendored footer (see below)                |
+| `plugins/`                  | vendored components (see below)            |
 | `scripts/`                  | portrait dithering                         |
 
 ## The design
@@ -54,6 +54,39 @@ cards — they are not what the site displays. The actual stack is pinned in
 > This has already bitten the headings and the link popovers. If text shows up in
 > sans, that's why — add the selector to the mono list at the top of `custom.scss`.
 
+**Motion answers the pointer; it never performs on arrival.** Two gestures, both
+pure CSS: a blinking block cursor after the homepage title, and a `>` marker that
+slides into the gutter when you hover a link in a list. Nothing fades or types
+itself in — a terminal is instant, and an entrance animation is a toll the reader
+pays on every visit to a page they came back to re-read. If a flourish is wanted,
+it goes on interaction, not on load. `prefers-reduced-motion` is honoured (the
+cursor settles lit rather than blinking).
+
+**Two measures, not one.** `--line-measure` (34rem) is *prose*: at 0.9rem mono
+that lands ~65 characters, which is the readability target and the reason the
+column is not simply "as wide as the page". `--wide-measure` (42rem) is for
+things read as **pictures rather than sentences** — code, tables, ASCII diagrams
+— where line length is irrelevant and wrapping a Terraform block at 65 characters
+is actively worse. Widening the prose to match would *lower* readability, not
+raise it. Both are capped per breakpoint against the fixed 320px rails, which do
+not shrink; without that cap a wide centre pushes the grid off a 1280px laptop.
+
+**Diagrams are ASCII in a fenced block**, not mermaid. Mermaid is off for privacy
+(see the table above), and a hand-drawn tree in a `pre` fits a terminal aesthetic
+better than a rendered flowchart anyway — zero third-party requests, no plugin,
+and `--wide-measure` gives it room. Reach for this before reaching for a library.
+
+**Notes carry a `status:`.** `draft` renders a hollow dot, `stable` a filled green
+one; any other value renders in grey, and a note with no `status` renders nothing
+at all. The site claims its notes are "unfinished on purpose" — this is what makes
+that claim checkable instead of merely asserted.
+
+**Folder and tag listings are a ledger** — title left, date ruled flush right,
+one hairline per row. This styles `.page-listing`, the markup Quartz already
+emits for `/notes` and `/tags/*`, so the dates come from frontmatter and no list
+is maintained by hand. Note the component right-aligns its own tag chips; that is
+overridden back to flush-left.
+
 **Code blocks are terminal-monochrome.** Every token inherits body text colour;
 only comments recede to grey and strings take the accent. Shiki still emits its
 GitHub theme as inline `--shiki-*` variables, so `custom.scss` wins by
@@ -73,8 +106,8 @@ python3 scripts/dither-portrait.py path/to/photo.jpg   # needs pillow
 
 ### Overriding Quartz's CSS
 
-Three traps in `base.scss` that each look identical from the outside ("my rule
-isn't applying") and have different causes. All three cost real time on the 404:
+Traps that each look identical from the outside ("my rule isn't applying") and
+have different causes. Every one of these has cost real time:
 
 - The general column rule is `.page > #quartz-body .center` — it contains an
   **ID**, and an ID outranks any number of classes. A class-only selector loses
@@ -84,10 +117,28 @@ isn't applying") and have different causes. All three cost real time on the 404:
 - `#quartz-body` is a **grid**. `margin: auto` on a grid item resolves to `0`;
   centre with `justify-self`. Mind `box-sizing` too — the footer is `border-box`
   and `.center` is not, which offsets them by exactly their padding.
+- **The centre column is an `auto` track** (`templateColumns` in
+  `variables.scss`), so it sizes to its *contents*. Prose has a huge max-content
+  width and fills the column; a listing (short titles, one date) has a narrow one
+  and **collapses** it — `/notes` and `/tags/*` rendered ~240px wide until
+  `.center` was given a definite `width`. The measure was only ever a ceiling,
+  never a floor. Any page whose content is intrinsically narrow will do this.
+- **There is no `.toolbar` element.** Search and the theme toggle are wrapped in a
+  generic `.flex-component` (one per page, in the left sidebar). A rule written
+  against `.toolbar` compiles cleanly, matches nothing, and ships inert — the
+  "icons recede until hovered" effect sat dead in the stylesheet for weeks.
+- **`body[data-slug="…"]` also matches link previews.** `data-slug` is on
+  `<body>`, so it scopes to the page you are *standing on* — and a popover renders
+  the **linked** page's markup into that same body. A rule keyed on the slug will
+  therefore hit every preview opened from that page. Contain it (`.center >`) or
+  it leaks.
 
-Measure with `getComputedStyle` rather than trusting a screenshot. And if a
-change seems not to apply at all, hard-reload before re-debugging: the dev server
-serves cached JS and CSS, which has twice looked like a broken fix.
+Measure with `getComputedStyle` rather than trusting a screenshot — but if the
+property is **transitioned, read it after the transition, not in the tick you
+trigger it**, or you will sample the starting value and conclude a working rule
+is broken. And if a change seems not to apply at all, hard-reload before
+re-debugging: the dev server serves cached JS and CSS, which has twice looked
+like a broken fix.
 
 ## Local modifications to Quartz
 
@@ -110,18 +161,33 @@ covering the article to report the tag name and a count.
 path (`source: ./plugins/footer`). The upstream `@quartz-community/footer`
 hardcodes a "Created with Quartz" credit with no option to disable it.
 
+**`plugins/status/`** — renders `status:` frontmatter as a dot + label.
+`note-properties` is the only stock plugin that prints a frontmatter value, and
+it prints an undifferentiated `<tr>` with **no per-property hook** — there is no
+way to style `status` apart from `description` in CSS alone. Hence a component.
+
+**`plugins/tag-index/`** — the sidebar list of every tag, with counts. Quartz has
+no site-wide tag component: `tag-list` renders only the *current page's* tags, and
+`explorer` is a file tree. The `/tags/*` pages were already being emitted by
+`tag-page` and **nothing linked to them** — they were reachable only by clicking a
+chip on a note you had already found. Counts derive from `allFiles`, so they
+follow frontmatter with no list to maintain.
+
+> All three are plain JS with no build step, and all three are **tracked in git**
+> rather than patched into the gitignored `.quartz/` — same reasoning as the
+> footer: a fetched plugin gets refetched in CI, so a local patch would make CI
+> silently emit different HTML than a local build.
+>
+> **Gotcha:** Quartz's loader imports components from the package's `./components`
+> subpath export, *not* from the main entry. A component exported only from
+> `index.js` will not be found. Each package re-exports through `components.js`.
+
 > This started as a patch to the fetched plugin in `.quartz/` — which is
 > **gitignored**, so CI would have refetched the plugin and silently emitted
 > different HTML than a local build. That is exactly the build-drift you would
 > flag in a security review, so the component is vendored instead: tracked, no
 > fetch, local and CI byte-identical. Quartz is credited on `/colophon`, and
 > `LICENSE.txt` is retained, which is what MIT actually requires.
-
-## Utility classes
-
-`.index-list` — a link list with dates flush right, hairline-separated. Wrap a
-markdown list in `<div class="index-list">` and suffix each item with `*2026*`.
-Currently unused; kept for a "start here" section on the homepage.
 
 ## Git
 
@@ -189,4 +255,5 @@ in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
   the built-in emitter, not configurable.
 - `content/colophon.md` has no `hosting` row — add one once a platform is picked.
 - A **"start here"** list on the homepage is waiting on there being more than one
-  note worth pointing at. The `.index-list` utility class is ready for it.
+  note worth pointing at. `/notes` already renders the ledger automatically, so
+  this only needs doing if the homepage should point at a curated subset.

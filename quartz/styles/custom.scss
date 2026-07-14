@@ -10,7 +10,12 @@
 $mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
 :root {
+  // prose. 34rem of 0.9rem mono lands ~65 characters — the readability sweet
+  // spot, and the reason this is not simply "as wide as the column".
   --line-measure: 34rem;
+  // code, tables, diagrams. these are read as pictures, not as sentences: line
+  // length does not apply to them, and terraform/ascii wraps badly at 65ch.
+  --wide-measure: 42rem;
 }
 
 // .popover-inner explicitly sets font-family: var(--bodyFont), which resolves to
@@ -54,10 +59,54 @@ body {
       // to the full measure and overflows the viewport instead of shrinking
       min-width: 0;
 
+      // ...but content-sized cuts both ways. quartz's centre column is an `auto`
+      // track, so it sizes to its contents: prose has a huge max-content width
+      // and fills the column, while a listing (short titles, a date) has a narrow
+      // one and *collapses* — which is why /notes and /tags rendered about 240px
+      // wide. pin the column to the measure so every page is the same width,
+      // whatever is inside it. border-box so the padding above counts within it.
+      box-sizing: border-box;
+      width: min(calc(var(--wide-measure) + 3rem), 100%);
+
+      // the rails are a fixed 320px and do not shrink, so a wide centre can push
+      // the grid past the viewport and summon a horizontal scrollbar. cap the
+      // column at whatever is actually left — per breakpoint, because the number
+      // of rails changes: two on desktop, one on tablet, none on mobile (where an
+      // unguarded `100vw - 640px` would go *negative* and collapse the column).
+      @media #{$desktop} {
+        max-width: calc(100vw - 2 * #{$sidePanelWidth} - 3rem);
+      }
+
+      @media #{$tablet} {
+        max-width: calc(100vw - #{$sidePanelWidth} - 3rem);
+      }
+
       & > * {
-        max-width: min(var(--line-measure), 100%);
+        max-width: min(var(--wide-measure), 100%);
         margin-left: 0;
         margin-right: 0;
+      }
+
+      // the reading column: prose, and the furniture that frames it (title, meta
+      // band, tags, backlinks, listings), all hold the 65-character measure
+      & .page-header,
+      & > hr,
+      & .page-footer,
+      & .page-listing,
+      & article .markdown-rendered > * {
+        max-width: min(var(--line-measure), 100%);
+      }
+
+      // ...and the things that are read as pictures rather than sentences get the
+      // full column. a terraform block or an ascii diagram wraps badly at 65ch,
+      // and wrapping is what it does instead of scrolling.
+      & article .markdown-rendered > pre,
+      & article .markdown-rendered > table,
+      & article .markdown-rendered > .table-container,
+      & article .markdown-rendered > figure,
+      & article .markdown-rendered > img,
+      & article .markdown-rendered > .katex-display {
+        max-width: min(var(--wide-measure), 100%);
       }
 
       // the separator quartz emits between article and footer slot
@@ -229,6 +278,82 @@ a {
     font-style: italic;
     font-size: 0.85rem;
     color: var(--gray);
+  }
+}
+
+// `status:` frontmatter — a dot and a word, under the subtitle. the site claims
+// its notes are unfinished on purpose; this is what makes that checkable.
+.note-status {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  &::before {
+    content: "";
+    display: inline-block;
+    width: 0.45em;
+    height: 0.45em;
+    border-radius: 50%;
+    // unrecognised statuses still render, in the default grey
+    background-color: var(--gray);
+  }
+
+  // a draft is hollow: the dot is an outline, not a fill
+  &[data-status="draft"]::before {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--gray);
+  }
+
+  &[data-status="stable"]::before {
+    background-color: var(--secondary);
+  }
+}
+
+// the sidebar tag index: every tag in the garden, busiest first
+.tag-index {
+  & h3 {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--gray);
+    text-transform: lowercase;
+    margin: 0 0 0.5rem;
+  }
+
+  & ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  & li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.15rem 0;
+    font-size: 0.8rem;
+  }
+
+  & a {
+    color: var(--dark);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--secondary);
+    }
+  }
+
+  // the count is a hint, not a fact anyone needs to read precisely
+  & .tag-index-count {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: var(--gray);
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -485,12 +610,16 @@ a {
   }
 }
 
-// the toolbar (search + dark mode) — icon-only, low contrast until hovered
-.toolbar {
+// the toolbar (search + dark mode) — icon-only, low contrast until hovered.
+// quartz emits no .toolbar element: the two controls are wrapped in a generic
+// .flex-component, one per page, in the left sidebar. targeting the class name
+// this *reads* like left the rule inert and the icons at full strength.
+.sidebar.left .flex-component {
   opacity: 0.55;
   transition: opacity 0.15s ease;
 
-  &:hover {
+  &:hover,
+  &:focus-within {
     opacity: 1;
   }
 }
@@ -676,33 +805,71 @@ iframe {
   }
 }
 
-// a lightweight "index list" for the landing page:
-// wrap link lists in a section and dates line up on the right.
-.index-list {
-  & ul {
+// folder and tag listings (/notes, /tags/*) as a ledger: title left, date ruled
+// off to the right, one hairline per row — a directory listing, not bullets.
+//
+// this styles the markup quartz already emits for these pages, so the dates come
+// from frontmatter and no list is maintained by hand.
+.page-listing {
+  // the component's own "N items under this folder." line
+  & > p {
+    font-size: 0.7rem;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.75rem;
+  }
+
+  & .section-ul {
     list-style: none;
     padding: 0;
     margin: 0;
   }
 
-  & li {
-    display: flex;
-    justify-content: space-between;
+  & .section-li {
+    margin: 0;
+  }
+
+  // two columns, two rows: title and date share the first line, tags run under
+  // them. a grid rather than a flex row because the tags have to span both
+  // columns — at a 34rem measure, title + date + chips on one line is a jumble.
+  & .section {
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: baseline;
-    gap: 1rem;
-    padding: 0.35rem 0;
+    gap: 0 1rem;
+    padding: 0.5rem 0;
     border-bottom: 1px solid var(--lightgray);
   }
 
-  & li a {
-    font-weight: 400;
+  & .desc {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0; // let a long title wrap instead of widening the column
+
+    & h3 {
+      font-size: 0.9rem;
+      font-weight: 400;
+      margin: 0;
+    }
   }
 
-  & li em {
-    flex-shrink: 0;
-    font-style: normal;
+  & .meta {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
     font-size: 0.75rem;
     color: var(--gray);
+    white-space: nowrap; // the date is the column the eye scans; never break it
+  }
+
+  & .tags {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0.35rem 0 0;
+    // the listing component right-aligns its chips, which made them drift away
+    // from the title they belong to and pile up under the date column
+    justify-content: flex-start;
   }
 }
 
@@ -780,8 +947,8 @@ body[data-slug="index"] .center > .page-header .article-title::after {
 // right: 100% parks it just outside the link's left edge, in the gutter that
 // already exists: the marker costs no layout, so nothing reflows on hover.
 .recent-notes .desc h3 a,
-.backlinks li a,
-.index-list li a {
+.page-listing .desc h3 a,
+.backlinks li a {
   position: relative;
 
   &::before {

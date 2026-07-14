@@ -267,6 +267,27 @@ plugins:
         colophon: /colophon
         source: https://github.com/verdantpro
         rss: /index.xml
+  # vendored, like the footer. renders `status:` frontmatter as a dot + label —
+  # note-properties prints frontmatter as an undifferentiated table row, with no
+  # per-property hook to style status apart from description.
+  - source: ./plugins/status
+    enabled: true
+    layout:
+      position: beforeBody
+      priority: 25
+  # vendored: quartz has no site-wide tag list. `tag-list` renders only the
+  # current page's tags, and the /tags/* pages emitted by `tag-page` were
+  # unreachable — nothing linked to them.
+  - source: ./plugins/tag-index
+    enabled: true
+    options:
+      title: tags
+      limit: 0
+    layout:
+      position: left
+      priority: 45
+      # same reason as recent-notes: mobile collapses the rail into a header row
+      display: desktop-only
   - source: github:quartz-community/recent-notes
     enabled: true
     options:

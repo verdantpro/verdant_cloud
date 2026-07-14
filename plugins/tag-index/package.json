@@ -1,0 +1,50 @@
+{
+  "name": "verdant-tag-index",
+  "version": "1.0.0",
+  "description": "Sidebar list of every tag in the garden, with counts.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./components": {
+      "import": "./components.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./index.js",
+  "sideEffects": false,
+  "peerDependencies": {
+    "preact": "^10.0.0"
+  },
+  "quartz": {
+    "name": "tag-index",
+    "displayName": "Tag index",
+    "category": "component",
+    "version": "1.0.0",
+    "quartzVersion": ">=5.0.0",
+    "dependencies": [],
+    "defaultOrder": 50,
+    "defaultEnabled": true,
+    "defaultOptions": {
+      "title": "tags",
+      "limit": 0
+    },
+    "components": {
+      "TagIndex": {
+        "displayName": "Tag index",
+        "defaultPosition": "left",
+        "defaultPriority": 45
+      }
+    },
+    "optionSchema": {
+      "title": {
+        "type": "string"
+      },
+      "limit": {
+        "type": "number"
+      }
+    }
+  }
+}

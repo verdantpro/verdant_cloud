@@ -2,6 +2,7 @@
 title: why cloud?
 date: 2026-07-13
 description: reasons why i am learning cloud
+status: draft
 tags:
   - cloud
   - security
