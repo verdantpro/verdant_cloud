@@ -198,28 +198,54 @@ The full Quartz history was kept (~1878 commits), so `git merge upstream/v5`
 stays straightforward. It also means the contributor graph is mostly Jacky's,
 and that `quartz/components/scripts/popover.inline.ts` will need merge care.
 
-## Deploy target (AWS)
+## How this deploys (AWS)
 
-Nothing publishes yet. The target is the [cloud resume challenge, AWS
-edition](https://cloudresumechallenge.dev/docs/the-challenge/aws/) — **not**
+**Live at <https://verdantprotocol.com>.** This is the [cloud resume challenge,
+AWS edition](https://cloudresumechallenge.dev/docs/the-challenge/aws/) — **not**
 GitHub/Cloudflare Pages. Standing up the abstraction is the point of the exercise.
 
 Originally planned on GCP; switched to AWS after the GCP account was blocked at
 signup. AWS is also the better fit here: HTTPS needs no paid load balancer
-(CloudFront + a free ACM cert), and the bucket can stay **completely private**.
+(CloudFront + a free ACM cert), and the bucket can stay private.
 
 ```
-public/  --[GitHub Actions, OIDC role]-->  S3 (private, Block Public Access on)
-                                             |  Origin Access Control
-                                             v
-                                          CloudFront  + ACM cert (us-east-1 only)
-                                             |        + CloudFront Function (clean URLs)
-                                             v
-                                          Route 53  A/AAAA alias --> distribution
+npx quartz build                 emits public/ (flat page.html)
+./fix-routing.sh                 rewrites to page/index.html  <-- REQUIRED
+aws s3 sync public/ ...          by hand, from a laptop       <-- not automated yet
+                                   |
+                                   v
+                                 S3  --Origin Access Control-->  CloudFront
+                                                                   + ACM cert (us-east-1)
+                                                                   + CloudFront Function
+                                                                     (uri + "/index.html")
+                                                                   |
+                                 Route 53 A/AAAA alias  <-----------+
+                                 (apex AND www)
 ```
+
+Verified against the live site: Route 53 nameservers, CloudFront in front of an
+S3 origin, an Amazon-issued cert covering both `verdantprotocol.com` and
+`www.verdantprotocol.com`, clean URLs resolving in subpaths, and a real 404 on a
+missing path.
 
 Backend (separate repo): API Gateway HTTP API → Lambda (Python) → DynamoDB, all
 in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
+
+### Known gaps in the deploy itself
+
+- **There is no CI.** No `.github/` in this repo — deploys are a manual
+  `aws s3 sync` from a laptop, which means the deployed site can silently drift
+  from `main`. It already did once: `my-name.md` and `fix-routing.sh` were live
+  before they were ever committed. Automating this (GitHub Actions + an OIDC
+  role, no stored keys) is the next real task.
+- **No infrastructure-as-code for the frontend.** The bucket, distribution,
+  function, cert, and DNS records are not described in Terraform anywhere in this
+  repo, so none of it is reproducible or reviewable. The challenge asks for IaC;
+  this is where it's owed.
+- **`www` serves a second copy of the site instead of redirecting to the apex.**
+  Both hostnames return `200` with identical content, and no `rel="canonical"` is
+  emitted, so search engines see duplicate content at two origins. Pick the apex
+  as canonical and 301 `www` to it (CloudFront Function, or a second distribution).
 
 ### Gotchas this repo already knows about
 
@@ -255,7 +281,8 @@ in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
 - The **404** uses the site's layout now, but the copy is still Quartz's
   ("Either this page is private or doesn't exist") — that string is hardcoded in
   the built-in emitter, not configurable.
-- `content/colophon.md` has no `hosting` row — add one once a platform is picked.
+- `content/colophon.md` has no `hosting` row — the platform is now picked (S3 +
+  CloudFront), so this is just owed.
 - A **"start here"** list on the homepage is waiting on there being more than one
   note worth pointing at. `/notes` already renders the ledger automatically, so
   this only needs doing if the homepage should point at a curated subset.
