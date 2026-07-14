@@ -260,6 +260,18 @@ plugins:
   # patching the fetched copy in .quartz/ meant CI — which refetches — would
   # silently emit different html than a local build. quartz is credited on
   # /colophon instead.
+  #
+  # this component renders the visitor counter too (challenge step 7), rather
+  # than a plugin of its own: quartz's `footer` layout slot holds exactly ONE
+  # component — cfg.ts declares `footer: QuartzComponent`, singular, not an array
+  # — so a second component claiming that slot is dropped with no warning and no
+  # markup.
+  #
+  # the api paths are SAME-ORIGIN on purpose. a cloudfront behavior on /api/*
+  # forwards to api gateway, so the browser never talks to execute-api directly.
+  # pointing this at the raw invoke url would put an amazonaws.com request on
+  # every page load and make /colophon's "every request goes to this domain"
+  # false — and that claim is the point of the site.
   - source: ./plugins/footer
     enabled: true
     options:
@@ -267,6 +279,9 @@ plugins:
         colophon: /colophon
         source: https://github.com/verdantpro/verdant_cloud
         rss: /index.xml
+      visitorCount: true
+      statsPath: /api/stats
+      visitPath: /api/visit
   # vendored, like the footer. renders `status:` frontmatter as a dot + label —
   # note-properties prints frontmatter as an undifferentiated table row, with no
   # per-property hook to style status apart from description.

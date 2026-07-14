@@ -900,6 +900,29 @@ footer {
   }
 }
 
+// the visitor counter, under the footer links. it renders INSIDE <footer>, so it
+// inherits the footer's measure and left padding — it needs no box of its own.
+//
+// deliberately typed as metadata, not as a widget: the same uppercase / gray /
+// tabular treatment as .content-meta, so a number fetched at runtime reads like
+// the date and the reading time rather than like a badge bolted onto a terminal.
+//
+// `hidden` until the fetch resolves, and the component removes the element
+// outright if the api is unreachable — so this never occupies space it cannot
+// fill, and a dead api costs an empty row rather than a zero.
+footer .visitor-count {
+  margin: 0.75rem 0 0;
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // motion
 // two gestures, both driven by the reader: a prompt cursor marking the site's

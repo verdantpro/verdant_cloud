@@ -28,7 +28,10 @@
     "defaultOrder": 50,
     "defaultEnabled": true,
     "defaultOptions": {
-      "links": {}
+      "links": {},
+      "visitorCount": true,
+      "statsPath": "/api/stats",
+      "visitPath": "/api/visit"
     },
     "components": {
       "Footer": {
@@ -40,6 +43,15 @@
     "optionSchema": {
       "links": {
         "type": "object"
+      },
+      "visitorCount": {
+        "type": "boolean"
+      },
+      "statsPath": {
+        "type": "string"
+      },
+      "visitPath": {
+        "type": "string"
       }
     }
   }
