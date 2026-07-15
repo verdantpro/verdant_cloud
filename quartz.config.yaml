@@ -150,7 +150,11 @@ plugins:
       display: all
   - source: github:quartz-community/alias-redirects
     enabled: true
-  - source: github:quartz-community/content-index
+  # vendored: the stock RSS feed led with folder listings ("notes") and every tag
+  # page, each dated today, ahead of real notes. the vendored copy filters the
+  # feed to actual notes; sitemap and contentIndex.json are unchanged. see the
+  # bundled dist note in the README's local-modifications section.
+  - source: ./plugins/content-index
     enabled: true
     options:
       enableSiteMap: true

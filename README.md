@@ -22,7 +22,7 @@ npx quartz build            # write static output to public/
 | `quartz.config.yaml`        | theme, plugins, layout                     |
 | `quartz/styles/custom.scss` | all custom styling                         |
 | `quartz/static/`            | portrait plates, favicon                   |
-| `plugins/`                  | vendored components (see below)            |
+| `plugins/`                  | vendored plugins — components + one emitter |
 | `scripts/`                  | portrait dithering                         |
 
 ## The design
@@ -213,14 +213,30 @@ no site-wide tag component: `tag-list` renders only the *current page's* tags, a
 chip on a note you had already found. Counts derive from `allFiles`, so they
 follow frontmatter with no list to maintain.
 
-> All three are plain JS with no build step, and all three are **tracked in git**
-> rather than patched into the gitignored `.quartz/` — same reasoning as the
-> footer: a fetched plugin gets refetched in CI, so a local patch would make CI
-> silently emit different HTML than a local build.
+**`plugins/content-index/`** — the sitemap / RSS / `contentIndex.json` emitter,
+vendored to fix a **polluted RSS feed**. The stock feed listed folder listings
+(`notes`) and every tag page (`cloud`, `Tag Index`, …) plus the homepage as
+items; generated/undated pages get `new Date()`, so they sorted above real notes
+*and* re-dated to "today" every build — noise for subscribers. The vendor patch
+adds one filter (`isNonNoteSlug`) so RSS carries **only notes**; the sitemap and
+`contentIndex.json` are built from a separate loop and still index everything.
+Unlike the hand-written plugins above, this one is the upstream **bundled `dist`**
+(`@quartz-community/content-index`) copied verbatim except the patch — it is
+self-contained (imports only `path` and `fs`), so it needs no build step and no
+`node_modules`. The patch is marked `VENDOR PATCH` in the file.
+
+> These are **tracked in git** rather than patched into the gitignored `.quartz/`
+> — same reasoning as the footer: a fetched plugin gets refetched in CI, so a
+> local patch would make CI silently emit different HTML than a local build. The
+> three components are hand-written plain JS; `content-index` is a vendored bundle
+> (see above). `npx quartz plugin install` reports "failed to update" for each —
+> **expected**: a local-path plugin has no remote to pull from, and the build
+> uses the local copy regardless.
 >
-> **Gotcha:** Quartz's loader imports components from the package's `./components`
-> subpath export, *not* from the main entry. A component exported only from
-> `index.js` will not be found. Each package re-exports through `components.js`.
+> **Gotcha:** for *components*, Quartz's loader imports from the package's
+> `./components` subpath export, *not* the main entry — each re-exports through
+> `components.js`. (`content-index` is an emitter, not a component, so it exports
+> its factory straight from the main entry instead.)
 
 > This started as a patch to the fetched plugin in `.quartz/` — which is
 > **gitignored**, so CI would have refetched the plugin and silently emitted
