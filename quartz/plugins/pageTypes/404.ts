@@ -19,6 +19,14 @@ export const NotFoundPageType: QuartzPageTypePlugin = () => ({
       frontmatter: { title: notFound, tags: [] },
     })
 
+    // keep the virtual 404 out of every listing — recent-notes, the sitemap, the
+    // RSS feed. it is a page, not a note. recent-notes filters on data.unlisted;
+    // set it directly here rather than via frontmatter, because this page is
+    // generated at emit time and skips the transformer that would otherwise copy
+    // frontmatter.unlisted across. (previously hidden with a css :has() rule,
+    // which left the dead link in the markup for crawlers and readers.)
+    ;(vfile.data as Record<string, unknown>).unlisted = true
+
     return [
       {
         slug,

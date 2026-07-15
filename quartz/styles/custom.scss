@@ -508,6 +508,13 @@ a {
   }
 }
 
+// a "last modified" date and a reading time read as blog chrome on a CV. the
+// resume is a document, not a post — drop the meta band there. data-slug is on
+// <body>, so this targets that one page without a plugin patch.
+body[data-slug="resume"] .content-meta {
+  display: none;
+}
+
 // tags as boxed #chips, sitting just under the metadata band
 .tags {
   display: flex;
@@ -796,12 +803,6 @@ iframe {
     font-size: 0.7rem;
     color: var(--gray);
     margin: 0.1rem 0 0;
-  }
-
-  // quartz keeps a virtual "Not Found" page in allFiles, and recent-notes only
-  // exposes `filter` as a function — which the yaml config cannot express.
-  & .recent-li:has(a[href$="404"]) {
-    display: none;
   }
 }
 

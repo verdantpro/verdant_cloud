@@ -3,7 +3,9 @@
 My digital garden, published at [verdantprotocol.com](https://verdantprotocol.com).
 
 Built on [Quartz 5](https://quartz.jzhao.xyz): notes live in `content/` as plain
-markdown and are rendered to static HTML at build time. No database, no runtime.
+markdown and are rendered to static HTML at build time. The one dynamic piece is
+a visitor counter — a Lambda reading DynamoDB — served same-origin behind
+CloudFront (see [How this deploys](#how-this-deploys-aws)).
 
 ## Running it
 
@@ -144,12 +146,22 @@ like a broken fix.
 
 These live outside `custom.scss` and will conflict when pulling upstream:
 
-**`quartz/components/Head.tsx`** — removed an unconditional
+**`quartz/components/Head.tsx`** — two changes. (1) Removed an unconditional
 `<link rel="preconnect" href="https://cdnjs.cloudflare.com">`. Quartz emits it on
 every page to warm up mermaid's lazy import, **outside any config gate** — so
 disabling mermaid does not remove it. It opened a connection to Cloudflare on
 every visit, handing each visitor's IP and user-agent to a third party whether or
-not a diagram existed. Re-add it if mermaid is ever turned back on.
+not a diagram existed. Re-add it if mermaid is ever turned back on. (2) The
+`og:url`/`twitter:url` now run the slug through `simplifySlug`, so the homepage
+emits the apex rather than `/index`; added a matching `<link rel="canonical">`,
+which Quartz omits by default.
+
+**`quartz/plugins/pageTypes/404.ts`** — set `data.unlisted = true` on the
+generated 404 page, so `recent-notes`, the sitemap, and RSS all drop it. It is a
+page, not a note; the flag is set directly rather than via frontmatter because
+this page skips the transformer that would normally copy it across. Replaces an
+earlier `custom.scss` `:has()` rule that only hid the link visually, leaving it
+in the markup for crawlers.
 
 **`quartz/components/scripts/popover.inline.ts`** — two changes, both tracked in
 git. First, bail out of empty popovers: content types with no renderer (e.g.
@@ -209,27 +221,32 @@ signup. AWS is also the better fit here: HTTPS needs no paid load balancer
 (CloudFront + a free ACM cert), and the bucket can stay private.
 
 ```
-npx quartz build                 emits public/ (flat page.html)
-./fix-routing.sh                 rewrites to page/index.html  <-- REQUIRED
-aws s3 sync public/ ...          by hand, from a laptop       <-- not automated yet
-                                   |
-                                   v
-                                 S3  --Origin Access Control-->  CloudFront
-                                                                   + ACM cert (us-east-1)
-                                                                   + CloudFront Function
-                                                                     (uri + "/index.html")
-                                                                   |
-                                 Route 53 A/AAAA alias  <-----------+
-                                 (apex AND www)
+npx quartz build → ./fix-routing.sh → aws s3 sync   (by hand, from a laptop; no CI yet)
+                                          |
+                                          v
+                              CloudFront distribution
+                              ACM cert (us-east-1) · Route 53 alias (apex; www 301s to apex)
+                                /                         \
+                        behavior *                    behavior /api/*
+                            |                             |  no caching, no viewer function,
+                            v                             |  Host header stripped
+                  S3 (private, OAC)                       v
+                  + viewer function                 API Gateway (HTTP API v2)
+                  (uri + "/index.html")             GET /api/stats · POST /api/visit
+                                                      → Lambda (python) → DynamoDB (site-stats)
 ```
 
 Verified against the live site: Route 53 nameservers, CloudFront in front of an
 S3 origin, an Amazon-issued cert covering both `verdantprotocol.com` and
-`www.verdantprotocol.com`, clean URLs resolving in subpaths, and a real 404 on a
-missing path.
+`www.verdantprotocol.com`, clean URLs resolving in subpaths, a real 404 on a
+missing path, `www` returning `301` to the apex, and `GET /api/stats` returning
+the counter JSON through CloudFront (no `execute-api` host reaches the browser).
 
-Backend (separate repo): API Gateway HTTP API → Lambda (Python) → DynamoDB, all
-in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
+The visitor counter's backend — API Gateway HTTP API → Lambda (Python) →
+DynamoDB (`site-stats`) — is reached **same-origin**: a `/api/*` CloudFront
+behavior forwards to API Gateway, so the browser never calls `execute-api` and
+the colophon's "every request goes to this domain" stays true. Like the frontend
+infrastructure below, it is **built in the console, not yet in Terraform**.
 
 ### Known gaps in the deploy itself
 
@@ -238,14 +255,18 @@ in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
   from `main`. It already did once: `my-name.md` and `fix-routing.sh` were live
   before they were ever committed. Automating this (GitHub Actions + an OIDC
   role, no stored keys) is the next real task.
-- **No infrastructure-as-code for the frontend.** The bucket, distribution,
-  function, cert, and DNS records are not described in Terraform anywhere in this
-  repo, so none of it is reproducible or reviewable. The challenge asks for IaC;
-  this is where it's owed.
-- **`www` serves a second copy of the site instead of redirecting to the apex.**
-  Both hostnames return `200` with identical content, and no `rel="canonical"` is
-  emitted, so search engines see duplicate content at two origins. Pick the apex
-  as canonical and 301 `www` to it (CloudFront Function, or a second distribution).
+- **No infrastructure-as-code at all — frontend or backend.** The bucket,
+  distribution, functions, cert, DNS records, *and* the counter's API Gateway,
+  Lambda, and DynamoDB table were all clicked together in the console, so none of
+  it is reproducible or reviewable. The challenge asks for IaC; this is the
+  largest thing still owed.
+- **No security response headers.** CloudFront serves S3/CloudFront defaults
+  only — no HSTS, `X-Content-Type-Options`, `Referrer-Policy`, or frame
+  protection. Fix with a CloudFront **response headers policy** on the default
+  behavior (console): `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+  and `X-Frame-Options: DENY` (or a CSP `frame-ancestors 'none'`). Not in the
+  repo — it is distribution config, so it lands with the IaC gap above.
 
 ### Gotchas this repo already knows about
 
@@ -266,10 +287,11 @@ in Terraform, CI via GitHub OIDC — **no stored AWS credentials anywhere**.
   `quartz build` and the S3 sync.
 - **A private-bucket miss surfaces as 403, not 404** — map CloudFront's 403 error
   response to the 404 page, or the themed 404 never renders.
-- **`public/CNAME` cannot simply be deleted.** It is *emitted on every build* by
-  the `cname` plugin (from `baseUrl`) — a GitHub Pages artifact, useless on
-  CloudFront. Disable the plugin in `quartz.config.yaml`; removing the file just
-  regenerates it.
+- **`public/CNAME` was a GitHub Pages artifact** emitted on every build by the
+  `cname` plugin (from `baseUrl`), useless on CloudFront. The plugin is now
+  disabled in `quartz.config.yaml`, so the file is no longer produced — deleting
+  it by hand never worked, since the build regenerated it. A stale copy may still
+  sit in the S3 bucket until the next `aws s3 sync --delete`.
 - **`.node-version` says v22.16.0** and the guide's workflow reads it via
   `node-version-file`, but this machine currently runs v26. CI will build on 22.
   Reconcile before trusting a green pipeline.

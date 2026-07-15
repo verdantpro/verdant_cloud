@@ -1,5 +1,5 @@
 import { i18n } from "../i18n"
-import { FullSlug, getFileExtension, joinSegments, pathToRoot } from "../util/path"
+import { FullSlug, getFileExtension, joinSegments, pathToRoot, simplifySlug } from "../util/path"
 import { CSSResourceToStyleElement, JSResourceToScriptElement } from "../util/resources"
 import { googleFontHref, googleFontSubsetHref } from "../util/theme"
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
@@ -27,9 +27,14 @@ export default (() => {
     const baseDir = fileData.slug === "404" ? path : pathToRoot(fileData.slug!)
     const iconPath = joinSegments(baseDir, "static/icon.png")
 
-    // Url of current page
+    // Canonical URL of the current page. simplifySlug collapses "index" -> "/"
+    // and "notes/index" -> "notes/", so the homepage emits the apex rather than
+    // "/index" (which is what the bare slug produced). Used for both og:url and
+    // the <link rel="canonical"> below.
     const socialUrl =
-      fileData.slug === "404" ? url.toString() : joinSegments(url.toString(), fileData.slug!)
+      fileData.slug === "404"
+        ? url.toString()
+        : joinSegments(url.toString(), simplifySlug(fileData.slug!))
 
     const usesCustomOgImage = ctx.cfg.plugins.emitters.some(
       (e) => e.name === CustomOgImagesEmitterName,
@@ -91,6 +96,10 @@ export default (() => {
             <meta property="twitter:domain" content={cfg.baseUrl}></meta>
             <meta property="og:url" content={socialUrl}></meta>
             <meta property="twitter:url" content={socialUrl}></meta>
+            {/* the site is reachable at both apex and www; www 301s to apex, but
+                a canonical tag is the in-HTML signal that names the apex URL as
+                authoritative. quartz emits none by default. */}
+            <link rel="canonical" href={socialUrl} />
           </>
         )}
 

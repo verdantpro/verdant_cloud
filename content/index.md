@@ -2,7 +2,9 @@
 title: verdant protocol
 ---
 
-hi, i'm justin. this is where i think out loud.
+hi, i'm justin. 
+
+this is verdant protocol, my digital space where i think out loud.
 
 i'm a baltimore-based cybersecurity pro looking to learn more about cloud technologies.
 
@@ -19,6 +21,8 @@ this site serves several purposes, it:
 - allows me to record the things i learn along the way
 - serves as a tangible record of progress made over time
 - gives me something to add to my resume and potentially talk about in an interview
+
+if you want to look around, [on ai writing...](/notes/on-ai-writing) is a good place to start.
 
 please reach out if you would like to connect!
 

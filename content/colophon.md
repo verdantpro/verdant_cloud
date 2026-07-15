@@ -3,13 +3,14 @@ title: colophon
 unlisted: true
 ---
 
-this site is built with [quartz](https://quartz.jzhao.xyz), a static site generator that publishes markdown as linked hypertext. notes are written in plain markdown and rendered at build time. no javascript framework. one dynamodb table holds the visit counts; everything else is static files.
+this site is built with [quartz](https://quartz.jzhao.xyz), a static site generator that publishes markdown as linked hypertext. notes are written in plain markdown and rendered to static html at build time — the pages need no javascript to read. what javascript does run — navigation, search, the visit counter — is all first-party, loaded from this domain and nowhere else. one dynamodb table holds the visit counts; everything else is static files.
 
-| layer     | choice                                                 |
-| --------- | ------------------------------------------------------ |
-| generator | quartz v5                                              |
-| type      | system monospace (sf mono, consolas)                   |
-| source    | [github.com/verdantpro](https://github.com/verdantpro) |
+| layer     | choice                                                                             |
+| --------- | ---------------------------------------------------------------------------------- |
+| generator | quartz v5                                                                          |
+| hosting   | aws s3 + cloudfront; the visit counter is a lambda + dynamodb behind the same distribution |
+| type      | system monospace (sf mono, consolas)                                              |
+| source    | [github.com/verdantpro/verdant_cloud](https://github.com/verdantpro/verdant_cloud) |
 
 this page loads nothing from anyone else: no webfonts, no cdns, no analytics, no third-party scripts. every request goes to this domain.
 

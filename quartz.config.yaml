@@ -159,8 +159,11 @@ plugins:
     enabled: true
   - source: github:quartz-community/og-image
     enabled: true
+  # off: this emits a public/CNAME file (from baseUrl) on every build — a GitHub
+  # Pages artifact. the site is on cloudfront, which ignores it; it was dead
+  # weight synced to S3 for nothing.
   - source: github:quartz-community/cname
-    enabled: true
+    enabled: false
   - source: github:quartz-community/canvas-page
     enabled: true
   - source: github:quartz-community/content-page
