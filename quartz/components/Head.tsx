@@ -72,7 +72,13 @@ export default (() => {
 
         <meta name="og:site_name" content={cfg.pageTitle}></meta>
         <meta property="og:title" content={title} />
-        <meta property="og:type" content="website" />
+        {/* notes are articles; the homepage, resume, and listings are websites */}
+        <meta
+          property="og:type"
+          content={fileData.slug?.startsWith("notes/") ? "article" : "website"}
+        />
+        {/* a missing URL should not be indexed, and it has no canonical of its own */}
+        {fileData.slug === "404" && <meta name="robots" content="noindex" />}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
@@ -98,8 +104,9 @@ export default (() => {
             <meta property="twitter:url" content={socialUrl}></meta>
             {/* the site is reachable at both apex and www; www 301s to apex, but
                 a canonical tag is the in-HTML signal that names the apex URL as
-                authoritative. quartz emits none by default. */}
-            <link rel="canonical" href={socialUrl} />
+                authoritative. quartz emits none by default. the 404 is skipped:
+                a canonical pointing every missing URL at the homepage is wrong. */}
+            {fileData.slug !== "404" && <link rel="canonical" href={socialUrl} />}
           </>
         )}
 

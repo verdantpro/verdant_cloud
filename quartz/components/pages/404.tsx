@@ -1,4 +1,3 @@
-import { i18n } from "../../i18n"
 import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "../types"
 
 const NotFound: QuartzComponent = ({ cfg, ctx }: QuartzComponentProps) => {
@@ -8,8 +7,8 @@ const NotFound: QuartzComponent = ({ cfg, ctx }: QuartzComponentProps) => {
   return (
     <article class="popover-hint">
       <h1>404</h1>
-      <p>{i18n(cfg.locale).pages.error.notFound}</p>
-      <a href={baseDir}>{i18n(cfg.locale).pages.error.home}</a>
+      <p>there's nothing at this address. it may have been renamed, or it never existed.</p>
+      <a href={baseDir}>← back home</a>
       <script
         dangerouslySetInnerHTML={{
           __html: `

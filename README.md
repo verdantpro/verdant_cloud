@@ -83,6 +83,11 @@ one; any other value renders in grey, and a note with no `status` renders nothin
 at all. The site claims its notes are "unfinished on purpose" — this is what makes
 that claim checkable instead of merely asserted.
 
+> **Gotcha:** `status: draft` is *not* `draft: true`. The first is cosmetic (the
+> dot) and leaves the note **fully published**. The second is the `remove-draft`
+> plugin's flag and drops the page from the build entirely. A note marked
+> `status: draft` is public — both current draft notes are live on purpose.
+
 **Folder and tag listings are a ledger** — title left, date ruled flush right,
 one hairline per row. This styles `.page-listing`, the markup Quartz already
 emits for `/notes` and `/tags/*`, so the dates come from frontmatter and no list
@@ -105,6 +110,13 @@ dots and ruins it.** Regenerate rather than resize:
 ```bash
 python3 scripts/dither-portrait.py path/to/photo.jpg   # needs pillow
 ```
+
+The portrait and the wordmark under it are a single **link home**: the plate is a
+`::before` on the title's *anchor*, not the `<h2>`, so clicking the headshot
+navigates — what people expect of a site mark. It is centred in the 320px desktop
+rail and left-aligned on mobile, where the whole left sidebar reflows (via
+`display: contents`) to put the article first and drop recent/tags below it —
+otherwise a phone buried every note under the navigation.
 
 ### Overriding Quartz's CSS
 
@@ -146,7 +158,7 @@ like a broken fix.
 
 These live outside `custom.scss` and will conflict when pulling upstream:
 
-**`quartz/components/Head.tsx`** — two changes. (1) Removed an unconditional
+**`quartz/components/Head.tsx`** — several changes. (1) Removed an unconditional
 `<link rel="preconnect" href="https://cdnjs.cloudflare.com">`. Quartz emits it on
 every page to warm up mermaid's lazy import, **outside any config gate** — so
 disabling mermaid does not remove it. It opened a connection to Cloudflare on
@@ -154,7 +166,10 @@ every visit, handing each visitor's IP and user-agent to a third party whether o
 not a diagram existed. Re-add it if mermaid is ever turned back on. (2) The
 `og:url`/`twitter:url` now run the slug through `simplifySlug`, so the homepage
 emits the apex rather than `/index`; added a matching `<link rel="canonical">`,
-which Quartz omits by default.
+which Quartz omits by default. (3) `og:type` is `article` for `notes/*` and
+`website` elsewhere (Quartz hardcodes `website`). (4) The 404 gets
+`<meta name="robots" content="noindex">` and **no** canonical — a canonical
+pointing every missing URL at the homepage is wrong.
 
 **`quartz/plugins/pageTypes/404.ts`** — set `data.unlisted = true` on the
 generated 404 page, so `recent-notes`, the sitemap, and RSS all drop it. It is a
@@ -162,6 +177,10 @@ page, not a note; the flag is set directly rather than via frontmatter because
 this page skips the transformer that would normally copy it across. Replaces an
 earlier `custom.scss` `:has()` rule that only hid the link visually, leaving it
 in the markup for crawlers.
+
+**`quartz/components/pages/404.tsx`** — replaced the stock i18n copy ("Either
+this page is private or doesn't exist" / "Return to homepage") with the site's
+own lowercase wording. The case-insensitive slug-redirect script is kept.
 
 **`quartz/components/scripts/popover.inline.ts`** — two changes, both tracked in
 git. First, bail out of empty popovers: content types with no renderer (e.g.
@@ -171,7 +190,16 @@ covering the article to report the tag name and a count.
 
 **`plugins/footer/`** — a vendored footer, pointed at from the config by local
 path (`source: ./plugins/footer`). The upstream `@quartz-community/footer`
-hardcodes a "Created with Quartz" credit with no option to disable it.
+hardcodes a "Created with Quartz" credit with no option to disable it. It also
+renders the **visitor counter** (challenge step 7): a one-line `views · N` under
+the links, typed as metadata rather than a widget. The counter lives *in the
+footer component* rather than its own plugin because Quartz's `footer` layout
+slot holds exactly one component (`cfg.ts` declares `footer: QuartzComponent`,
+singular) — a second one is dropped with no warning. It POSTs once per browser
+session to the same-origin `/api/visit`, reads with `GET /api/stats` thereafter,
+and removes itself if the API is unreachable — a dead counter is worse than
+none. The session flag is set *before* the fetch, because Quartz fires `nav`
+twice per load and a flag set after `await` let one load count as two visitors.
 
 **`plugins/status/`** — renders `status:` frontmatter as a dot + label.
 `note-properties` is the only stock plugin that prints a frontmatter value, and
@@ -248,6 +276,13 @@ behavior forwards to API Gateway, so the browser never calls `execute-api` and
 the colophon's "every request goes to this domain" stays true. Like the frontend
 infrastructure below, it is **built in the console, not yet in Terraform**.
 
+**Security headers** are set by a CloudFront response headers policy on both
+behaviors: `Strict-Transport-Security: max-age=63072000; includeSubDomains`
+(deliberately **no `preload`** — that is a one-way door and hard to reverse),
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+and `X-Frame-Options: DENY`. Origin-override is on, so the policy stays
+authoritative if an origin ever emits its own. Console-managed, like the rest.
+
 ### Known gaps in the deploy itself
 
 - **There is no CI.** No `.github/` in this repo — deploys are a manual
@@ -260,13 +295,6 @@ infrastructure below, it is **built in the console, not yet in Terraform**.
   Lambda, and DynamoDB table were all clicked together in the console, so none of
   it is reproducible or reviewable. The challenge asks for IaC; this is the
   largest thing still owed.
-- **No security response headers.** CloudFront serves S3/CloudFront defaults
-  only — no HSTS, `X-Content-Type-Options`, `Referrer-Policy`, or frame
-  protection. Fix with a CloudFront **response headers policy** on the default
-  behavior (console): `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`,
-  `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
-  and `X-Frame-Options: DENY` (or a CSP `frame-ancestors 'none'`). Not in the
-  repo — it is distribution config, so it lands with the IaC gap above.
 
 ### Gotchas this repo already knows about
 
@@ -303,8 +331,8 @@ infrastructure below, it is **built in the console, not yet in Terraform**.
 - The **404** uses the site's layout now, but the copy is still Quartz's
   ("Either this page is private or doesn't exist") — that string is hardcoded in
   the built-in emitter, not configurable.
-- `content/colophon.md` has no `hosting` row — the platform is now picked (S3 +
-  CloudFront), so this is just owed.
-- A **"start here"** list on the homepage is waiting on there being more than one
-  note worth pointing at. `/notes` already renders the ledger automatically, so
-  this only needs doing if the homepage should point at a curated subset.
+- The homepage links to one note (`on ai writing...`) as a "start here". Because
+  backlinks are earned by real links, only linked notes show a "linked from
+  verdant protocol" — `why-cloud` shows none because nothing links to it. As the
+  garden grows, either link new notes from the homepage deliberately or lean on
+  `/notes`, which indexes them all automatically.

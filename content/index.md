@@ -14,8 +14,6 @@ most of what's here is unfinished on purpose — notes get revised in place rath
 
 this site was built with ai assistance (claude, some grok, and eventually codex...), but the prose is solely created by me, errors and all! 😎 i figured i would leave css to the machines, and focus on providing stellar insight on my journey.
 
-so, back to the point, my name is justin.
-
 this site serves several purposes, it:
 - provides a way to practice my skills (aws, devops, iac, etc.)
 - allows me to record the things i learn along the way
