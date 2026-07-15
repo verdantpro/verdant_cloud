@@ -44,6 +44,10 @@ import { h } from "preact"
 // Marking synchronously closes that race. The cost of the trade is that a failed
 // POST does not retry within the session, which is the right way to be wrong: a
 // counter that undercounts on an error beats one that inflates on every visit.
+//
+// If POST fails (throttle, 403 origin check, 5xx), fall back to GET /api/stats so
+// the visitor still sees the number. A missing counter is worse than an uncounted
+// view — same fail-soft rule as when the API is unreachable entirely.
 const counterScript = (statsPath, visitPath) => `
 (function () {
   const STATS = ${JSON.stringify(statsPath)}
@@ -76,6 +80,12 @@ const counterScript = (statsPath, visitPath) => `
     el.removeAttribute("hidden")
   }
 
+  async function fetchStats() {
+    const res = await fetch(STATS, { method: "GET" })
+    if (!res.ok) throw new Error(res.status)
+    return res.json()
+  }
+
   async function count() {
     const el = document.querySelector(".visitor-count")
     if (!el || busy || el.dataset.done === "true") return
@@ -86,11 +96,17 @@ const counterScript = (statsPath, visitPath) => `
     if (!counted) markSeen() // synchronous, before the fetch: see note above
 
     try {
-      const res = counted
-        ? await fetch(STATS, { method: "GET" })
-        : await fetch(VISIT, { method: "POST" })
-      if (!res.ok) throw new Error(res.status)
-      render(el, await res.json())
+      if (counted) {
+        render(el, await fetchStats())
+        return
+      }
+      const res = await fetch(VISIT, { method: "POST" })
+      if (res.ok) {
+        render(el, await res.json())
+        return
+      }
+      // throttled / rejected / error: still show the number without counting
+      render(el, await fetchStats())
     } catch (e) {
       // fail soft: no counter beats a broken one
       el.remove()
