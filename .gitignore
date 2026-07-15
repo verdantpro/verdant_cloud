@@ -13,3 +13,7 @@ private/
 replit.nix
 .quartz/
 quartz/cli/tui/dist/
+
+# python bytecode
+__pycache__/
+*.pyc
