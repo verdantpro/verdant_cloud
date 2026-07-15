@@ -139,7 +139,11 @@ body {
 // theme-flipped with a css filter, because inverting the ink inverts the *tones*
 // too and the portrait comes out a photographic negative. so the light plate inks
 // the dark regions in black, and the dark plate inks the light regions in white.
-.page-title::before {
+// the portrait renders as a ::before on the title's ANCHOR, not the h2, so the
+// whole lockup (portrait + wordmark) is one link home — clicking the headshot
+// navigates, which is what people expect of a site's mark. inline-block keeps the
+// click target hugging the content rather than spanning the empty rail width.
+.page-title a::before {
   content: "";
   display: block;
   // the png is 96px shown at 192px: an exact 2x integer scale, so each dither dot
@@ -155,18 +159,22 @@ body {
   image-rendering: pixelated;
 }
 
-:root[saved-theme="dark"] .page-title::before {
+:root[saved-theme="dark"] .page-title a::before {
   background-image: url("/static/portrait-dark.png");
 }
 
-// site title: lowercase, unemphatic, no hover flourish
+// site title: lowercase, unemphatic, no hover flourish. centered in the 320px
+// desktop rail — text-align centers the inline-block anchor as a box, and the
+// wordmark inside it, under the portrait. mobile overrides this back to the left.
 .page-title {
   font-size: 0.9rem;
   font-weight: 500;
   text-transform: lowercase;
   letter-spacing: 0.02em;
+  text-align: center;
 
   & a {
+    display: inline-block;
     color: var(--dark);
     background-image: none;
   }
@@ -1015,49 +1023,101 @@ body[data-slug="index"] .center > .page-header .article-title::after {
 }
 
 @media #{$mobile} {
-  .page > #quartz-body .center {
+  // the mobile grid stacks the ENTIRE left sidebar — portrait, title, search,
+  // recent, AND tags — above the content, burying every note under the nav.
+  // flatten the sidebar into the body's own flow (`display: contents`) and lay
+  // the body out as a wrapping flex column, so `order` keeps the header cluster
+  // on top, the article next, and recent + tags on their own lines BELOW it.
+  .page > #quartz-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .page > #quartz-body > .sidebar.left {
+    display: contents;
+  }
+
+  // order the flattened children. the header (portrait/title, then the toolbar on
+  // its own line) comes first; everything after gets a 100% basis and stacks.
+  .page > #quartz-body > .sidebar.left > .page-title,
+  .page > #quartz-body > .sidebar.left > .flex-component {
+    order: 1;
+  }
+
+  // the spacer plugin renders a flex-grow horizontal spacer, meant to push a
+  // toolbar to the far side of quartz's default mobile header. this layout puts
+  // the toolbar on its own row, so the spacer did nothing but sit ahead of the
+  // title (its box keeps order 0 — the `.mobile-only` wrapper is display:contents,
+  // so an order set on the wrapper is ignored) and shove the portrait ~180px off
+  // the left edge. drop it.
+  .page > #quartz-body > .sidebar.left > .mobile-only {
+    display: none;
+  }
+  .page > #quartz-body > .center {
+    order: 2;
+  }
+  .page > #quartz-body > .sidebar.left > .recent-notes {
+    order: 3;
+  }
+  .page > #quartz-body > .sidebar.left > .tag-index {
+    order: 4;
+  }
+  .page > #quartz-body > .sidebar.right {
+    order: 5;
+  }
+  .page > #quartz-body > footer {
+    order: 6;
+  }
+
+  // the article, recent, tags, right rail, and footer each take a full-width row
+  .page > #quartz-body > .center,
+  .page > #quartz-body > .sidebar.left > .recent-notes,
+  .page > #quartz-body > .sidebar.left > .tag-index,
+  .page > #quartz-body > .sidebar.right,
+  .page > #quartz-body > footer {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .page > #quartz-body > .center {
     padding: 0 1.5rem;
   }
 
-  // on mobile quartz collapses the left sidebar into a header row. the portrait
-  // is sized for a 320px desktop rail, so at phone width it swallows the screen
-  // and strands the site title underneath it. lay the header out as a proper row:
-  // portrait + title on the left, search and theme toggle on the right.
-  .page > #quartz-body .sidebar.left {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    padding: 1.5rem 1.5rem 0;
-  }
-
+  // portrait over wordmark, left-aligned: a logo lockup that mirrors the desktop
+  // rail. the ::before is already a block, so the title falls underneath on its
+  // own. the desktop 192px plate would swallow a phone, so it drops to 96px here.
   .page-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
     margin: 0;
+    padding: 1.5rem 0 0 1.5rem;
+    text-align: left; // the rail centers the lockup; the phone header keeps it left
 
     // 96px is the plate's NATIVE size — half the desktop 192px, which is an exact
     // 1:1 pixel map. any other value resamples the dither dots into grey mush.
-    &::before {
+    & a::before {
       width: 96px;
       height: 96px;
-      margin-bottom: 0;
-      flex-shrink: 0;
+      margin-bottom: 0.55rem;
     }
   }
 
-  // recent + tags used to be desktop-only, which left the phone with no route to
-  // a single note: the header row carries no nav, and the homepage links only to
-  // /resume. they belong here — they are the only index of the garden. the header
-  // row above is `flex-wrap: wrap`, so a 100% basis drops each onto its own full
-  // -width line beneath it rather than squeezing into the row.
-  .page > #quartz-body .sidebar.left > .recent-notes,
-  .page > #quartz-body .sidebar.left > .tag-index {
+  // the toolbar (search + theme toggle) sits on its own full-width line under the
+  // portrait/title, rather than sharing the row. at phone width the title cluster
+  // already fills the line, so a shared row wraps the toolbar onto a second line
+  // anyway — but right-floated, stranding a gap to its left. a full-width row is
+  // predictable and lets the search field breathe. the display:contents sidebar
+  // has no box, so its inset lives on each child instead.
+  .page > #quartz-body > .sidebar.left > .flex-component {
     flex-basis: 100%;
-    width: 100%;
-    margin-top: 0.5rem;
+    padding: 1rem 1.5rem 0;
+  }
+
+  // recent + tags now sit under the article. same inset as the content, with a
+  // rule of space above so they read as a closing index, not part of the text.
+  .page > #quartz-body > .sidebar.left > .recent-notes,
+  .page > #quartz-body > .sidebar.left > .tag-index {
+    padding: 0 1.5rem;
+    margin-top: 1.75rem;
   }
 
   // the dated list is what overflowed a phone: stacked title-over-date, five deep,
