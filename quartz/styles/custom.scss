@@ -958,14 +958,24 @@ iframe {
   }
 }
 
-// the site footer proper ("created with quartz", links)
+// the site footer proper (links + visit counter)
 footer {
-  // border-box so the padding below counts inside max-width, otherwise the
-  // footer is 1.5rem wider than the viewport and the page scrolls sideways
+  // border-box so the padding below counts inside width, otherwise the footer is
+  // 1.5rem wider than the viewport and the page scrolls sideways.
   box-sizing: border-box;
-  max-width: min(calc(var(--line-measure) + 1.5rem), 100%);
-  margin: 1.5rem 0 3rem;
-  padding-left: 1.5rem; // match .center's padding so it lines up with the text
+  // the footer must occupy the SAME box as .center, or its links don't line up
+  // with the article text. two things were fighting that:
+  //   1. base.scss sets `min-width: 100%` on the footer (the same trap it sets on
+  //      .center) — min-width beats width, so any cap was ignored and the footer
+  //      filled the whole grid track. reset it to 0 first.
+  //   2. .center is narrower than its track and centred in it, so it sits a few px
+  //      right of the track's left edge — a gap that GROWS with viewport width.
+  // matching .center's exact width + auto side-margins makes the footer centre in
+  // the track identically, so padding-left lands the links on the text at any size.
+  min-width: 0;
+  width: min(calc(var(--wide-measure) + 3rem), 100%);
+  margin: 1.5rem auto 3rem;
+  padding-left: 1.5rem; // = .center's padding, so the links sit on the text edge
   font-size: 0.75rem;
   color: var(--gray);
 
