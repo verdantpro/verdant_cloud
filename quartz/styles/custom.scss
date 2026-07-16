@@ -109,11 +109,23 @@ body {
         max-width: min(var(--wide-measure), 100%);
       }
 
-      // the separator quartz emits between article and footer slot
-      & > hr {
+      // the separator quartz emits between article and footer slot, plus any `---`
+      // an author writes in a note — rendered as a DITHERED dot rule, not a hairline.
+      // this extends the portrait's 1-bit language to a second surface, so the
+      // computed-image identity isn't carried by one image alone.
+      & > hr,
+      & article .markdown-rendered > hr {
         border: none;
-        border-top: 1px solid var(--lightgray);
+        height: 5px;
+        color: var(--lightgray);
+        background-image: radial-gradient(currentColor 0.6px, transparent 0.7px);
+        background-size: 3px 3px;
+      }
+      & > hr {
         margin: 4rem 0 0;
+      }
+      & article .markdown-rendered > hr {
+        margin: 2.5rem 0;
       }
     }
 
@@ -194,11 +206,26 @@ article {
     margin: 2.5rem 0 0.75rem;
   }
 
+  // widened the top of the in-article scale too, so long notes get real section
+  // contrast instead of one grey plane. body + h3 stay small; the step is at the top.
   & h1 {
-    font-size: 1.25rem;
+    font-size: 1.45rem;
+    letter-spacing: -0.01em;
   }
+  // section headings carry a small green block marker in the gutter — the accent
+  // used to mean "new section," not decoration. structural green, Aicher-style.
   & h2 {
-    font-size: 1.05rem;
+    font-size: 1.25rem;
+    position: relative;
+  }
+  & h2::before {
+    content: "";
+    position: absolute;
+    left: -0.9rem;
+    top: 0.5em;
+    width: 0.4rem;
+    height: 0.4rem;
+    background: var(--secondary);
   }
   & h3,
   & h4,
@@ -252,12 +279,16 @@ a {
 
 // the page's own title, rendered above the article body. the loudest thing on the
 // page on purpose — hierarchy comes from one element being clearly dominant, not
-// from everything shouting. 1.5rem against a 0.9rem body is a ~1.7x step.
+// from everything shouting. widened to a confident display step: ~2.3rem against
+// a 0.9rem body is ~2.5x, so the first screen actually lands (a Swiss move — pair
+// generous space with one dominant entry, don't split the difference everywhere).
 .article-title {
-  font-size: 1.5rem;
+  font-size: clamp(2rem, 5vw, 2.65rem);
   font-weight: 600;
-  letter-spacing: 0;
-  margin: 0 0 0.6rem;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin: 0 0 0.7rem;
+  text-wrap: balance;
 }
 
 // `description` frontmatter, rendered as an italic subtitle under the title.
@@ -475,6 +506,11 @@ a {
     }
   }
 
+  // the home root (~) sits in accent green — the one crumb that means "start over".
+  & .breadcrumb-element:first-child a {
+    color: var(--secondary);
+  }
+
   // each crumb wraps its link and a <p> separator; <p> is block-level, so
   // without this the "/" drops onto its own line
   & .breadcrumb-element {
@@ -499,9 +535,16 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
-  padding: 0.85rem 0;
-  border-top: 1px solid var(--lightgray);
-  border-bottom: 1px solid var(--lightgray);
+  padding: 0.9rem 0;
+  // dithered dot rules top and bottom instead of plain hairlines — the 1-bit motif
+  // made visible on every note. rendered as background rows (not borders or flex
+  // pseudo-elements) so the band's flex layout is untouched.
+  background-image:
+    radial-gradient(var(--gray) 0.55px, transparent 0.7px),
+    radial-gradient(var(--gray) 0.55px, transparent 0.7px);
+  background-size: 3px 3px;
+  background-position: left top, left bottom;
+  background-repeat: repeat-x;
   font-variant-numeric: tabular-nums;
 
   & > * {
@@ -521,6 +564,39 @@ a {
 // <body>, so this targets that one page without a plugin patch.
 body[data-slug="resume"] .content-meta {
   display: none;
+}
+
+// resume density mode. a CV is *scanned*, not read line-by-line — interviewers
+// skim — so within the same type system the resume gets a scannier rhythm: a
+// wider measure (redefining --line-measure flows through every measure rule with
+// no specificity fight), tighter list line-height, and job headers pulled close
+// to their dates + bullets so each role reads as one block instead of loose lines.
+body[data-slug="resume"] {
+  --line-measure: 40rem;
+
+  & article .markdown-rendered {
+    & li {
+      line-height: 1.5;
+    }
+    & ul {
+      margin-top: 0.4rem;
+    }
+    // section headers (experience / skills / education) keep their air above
+    & h2 {
+      margin-top: 2.6rem;
+    }
+    // job titles: a touch louder, and pinned to the block they head
+    & h3 {
+      font-size: 1.05rem;
+      margin-top: 1.8rem;
+      margin-bottom: 0.15rem;
+    }
+    // the *dates* line under each job — quiet meta, not body prose
+    & h3 + p em {
+      color: var(--gray);
+      font-size: 0.82rem;
+    }
+  }
 }
 
 // tags as boxed #chips, sitting just under the metadata band

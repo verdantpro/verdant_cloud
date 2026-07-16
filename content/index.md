@@ -12,7 +12,7 @@ this site is a collection of notes assembled along the road to mastery.
 
 most of what's here is unfinished on purpose — notes get revised in place rather than published and abandoned.
 
-this site was built with ai assistance (claude, some grok, and eventually codex...), but the prose is solely created by me, errors and all! 😎 i figured i would leave css to the machines, and focus on providing stellar insight on my journey.
+this site was built with ai assistance (claude, some grok, and eventually codex...), but the prose is solely created by me, errors and all. i figured i would leave css to the machines, and focus on providing stellar insight on my journey.
 
 this site serves several purposes, it:
 - provides a way to practice my skills (aws, devops, iac, etc.)

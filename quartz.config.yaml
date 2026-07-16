@@ -26,11 +26,13 @@ configuration:
       code: IBM Plex Mono
     colors:
       lightMode:
-        light: "#fcfcfb"
-        lightgray: "#e7e7e3"
-        gray: "#9b9b95"
-        darkgray: "#46463f"
-        dark: "#12120f"
+        # warm, faintly green-biased paper — not clinical white. the neutrals carry
+        # the same slight green cast so the ground reads as *chosen*, tied to the name.
+        light: "#f1f2ec"
+        lightgray: "#e0e2d6"
+        gray: "#8b9085"
+        darkgray: "#45473e"
+        dark: "#15160e"
         secondary: "#2f6f4f"
         tertiary: "#7fa88c"
         highlight: rgba(47, 111, 79, 0.07)
