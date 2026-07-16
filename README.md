@@ -38,11 +38,11 @@ A clean checkout also needs `npx quartz plugin install` before the first build
 | `content/robots.txt`          | crawler allow + sitemap pointer                               |
 | `quartz.config.yaml`          | theme, plugins, layout                                        |
 | `quartz/styles/custom.scss`   | all custom styling                                            |
-| `quartz/static/`              | portrait plates, favicon                                      |
+| `quartz/static/`              | portrait plates, dual favicon tiles, og-image                 |
 | `plugins/`                    | vendored plugins: `footer`, `status`, `tag-index`, `content-index` |
 | `infra/visit-counter/`        | Lambda source for the visitor counter (console-deployed)      |
 | `fix-routing.sh`              | post-build rewrite for CloudFront clean URLs                  |
-| `scripts/`                    | portrait dithering                                            |
+| `scripts/`                    | portrait + favicon generation (`dither-portrait.py`)          |
 
 ## The design
 
@@ -122,12 +122,14 @@ out-specifying `syntax.scss` — changing `theme:` in the config will do nothing
 1-bit image cannot be theme-flipped with `invert()`: that inverts the *tones*
 too and the portrait comes out a photographic negative. So `portrait-light.png`
 inks the dark regions black, and `portrait-dark.png` inks the light regions
-white. Each is 96px displayed at 192px — an exact 2× integer scale, so every
-dither dot lands as a clean 2×2 block. **Any non-integer scale resamples the
-dots and ruins it.** Regenerate rather than resize:
+white — both ink-on-transparency, so each sits on the page ground. Each is 96px
+displayed at 192px — an exact 2× integer scale, so every dither dot lands as a
+clean 2×2 block. **Any non-integer scale resamples the dots and ruins it.**
+Regenerate rather than resize:
 
 ```bash
 python3 scripts/dither-portrait.py path/to/photo.jpg   # needs pillow
+python3 scripts/dither-portrait.py --icons-only        # favicons only, from plates
 ```
 
 The portrait and the wordmark under it are a single **link home**: the plate is a
@@ -136,6 +138,23 @@ navigates — what people expect of a site mark. It is centred in the 320px desk
 rail and left-aligned on mobile, where the whole left sidebar reflows (via
 `display: contents`) to put the article first and drop recent/tags below it —
 otherwise a phone buried every note under the navigation.
+
+**The favicon is the same headshot, not the stock Quartz crystal.** Bare
+ink-on-transparency fails at tab size: black ink vanishes into dark browser
+chrome (and white into light). So each favicon is the matching plate composited
+onto an **opaque site-surface tile**:
+
+| file | contents | when |
+| ---- | -------- | ---- |
+| `static/icon.png` | light plate on `lightMode.light` (`#f1f2ec`) | light OS chrome + fallback |
+| `static/icon-dark.png` | dark plate on `darkMode.light` (`#0e0f0e`) | dark OS chrome |
+| `favicon.ico` | 48×48 from `icon.png` (favicon plugin) | legacy clients; no media query |
+
+`Head.tsx` emits three `<link rel="icon">` tags: light and dark gated by
+`prefers-color-scheme`, plus a bare light fallback. The surface hexes are
+duplicated in `scripts/dither-portrait.py` (`LIGHT_BG` / `DARK_BG`) — if the
+theme colours in `quartz.config.yaml` move, update those constants and re-run
+`--icons-only`.
 
 ### Overriding Quartz's CSS
 
@@ -188,7 +207,10 @@ emits the apex rather than `/index`; added a matching `<link rel="canonical">`,
 which Quartz omits by default. (3) `og:type` is `article` for `notes/*` and
 `website` elsewhere (Quartz hardcodes `website`). (4) The 404 gets
 `<meta name="robots" content="noindex">` and **no** canonical — a canonical
-pointing every missing URL at the homepage is wrong.
+pointing every missing URL at the homepage is wrong. (5) Favicons are the 1-bit
+portrait tiles (`static/icon.png` / `static/icon-dark.png`) with
+`prefers-color-scheme` media queries plus a light fallback — Quartz only links
+`static/icon.png`. See [The design](#the-design) for why the tiles are opaque.
 
 **`quartz/plugins/pageTypes/404.ts`** — set `data.unlisted = true` on the
 generated 404 page, so `recent-notes`, the sitemap, and RSS all drop it. It is a

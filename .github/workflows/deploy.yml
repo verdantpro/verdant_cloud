@@ -1,0 +1,74 @@
+name: deploy
+
+# Frontend deploy for verdantprotocol.com (Cloud Resume Challenge step 15).
+# Build Quartz, apply the folder-convention rewrite, sync to S3, invalidate
+# CloudFront. Auth to AWS is via OIDC — no long-lived keys are stored anywhere.
+
+on:
+  push:
+    branches: [main]
+    # only deploy when something that affects the built site changes; a README-only
+    # or infra/ push should not trigger a deploy.
+    paths:
+      - "content/**"
+      - "quartz/**"
+      - "plugins/**"
+      - "quartz.config.yaml"
+      - "quartz.ts"
+      - "fix-routing.sh"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch: {}
+
+# never cancel a run mid-sync — a half-finished aws s3 sync is worse than a queue.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # required for OIDC role assumption
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version # pins node 22 to match local
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Quartz plugins (from config, not lockfile)
+        # MUST be --from-config, not plain `plugin install`. The lockfile records
+        # our vendored plugins as their stale UPSTREAM github versions (footer WITH
+        # the "Created with Quartz" credit, unpatched RSS) and omits two of them.
+        # --from-config re-resolves `source: ./plugins/*` relative to the checkout,
+        # so the vendored copies load correctly. The "N failed" it prints is the
+        # plain-JS vendored plugins having no `npm run build` script — harmless:
+        # the command exits 0 and the plugins load from index.js.
+        run: npx quartz plugin install --from-config
+
+      - name: Build
+        run: npx quartz build
+
+      - name: Rewrite to folder convention (required before S3 sync)
+        run: ./fix-routing.sh
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Sync to S3
+        run: aws s3 sync public/ "s3://${{ vars.S3_BUCKET }}" --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"

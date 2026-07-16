@@ -25,7 +25,14 @@ export default (() => {
     const url = new URL(`https://${cfg.baseUrl ?? "example.com"}`)
     const path = url.pathname as FullSlug
     const baseDir = fileData.slug === "404" ? path : pathToRoot(fileData.slug!)
+    // 1-bit portrait plates as favicons — same dual-plate idea as the sidebar
+    // mark, but each plate sits on an opaque site-surface tile (#f1f2ec /
+    // #0e0f0e, matching theme light/dark surfaces). bare ink-on-transparent
+    // vanishes in the opposite tab chrome; a bare (no media) link is the light
+    // tile for browsers that ignore the query. regenerate via
+    // scripts/dither-portrait.py (--icons-only or a full photo run).
     const iconPath = joinSegments(baseDir, "static/icon.png")
+    const iconDarkPath = joinSegments(baseDir, "static/icon-dark.png")
 
     // Canonical URL of the current page. simplifySlug collapses "index" -> "/"
     // and "notes/index" -> "notes/", so the homepage emits the apex rather than
@@ -110,6 +117,8 @@ export default (() => {
           </>
         )}
 
+        <link rel="icon" href={iconPath} media="(prefers-color-scheme: light)" />
+        <link rel="icon" href={iconDarkPath} media="(prefers-color-scheme: dark)" />
         <link rel="icon" href={iconPath} />
         <meta name="description" content={description} />
         <meta name="generator" content="Quartz" />
