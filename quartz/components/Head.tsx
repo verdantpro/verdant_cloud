@@ -31,8 +31,13 @@ export default (() => {
     // vanishes in the opposite tab chrome; a bare (no media) link is the light
     // tile for browsers that ignore the query. regenerate via
     // scripts/dither-portrait.py (--icons-only or a full photo run).
-    const iconPath = joinSegments(baseDir, "static/icon.png")
-    const iconDarkPath = joinSegments(baseDir, "static/icon-dark.png")
+    //
+    // ?v= is a deliberate cache buster: browsers (and some CDNs) keep favicons
+    // far longer than other assets, often past a hard reload. bump the number
+    // whenever the icon files change so existing tabs pick up the new mark.
+    const iconVersion = "2"
+    const iconPath = `${joinSegments(baseDir, "static/icon.png")}?v=${iconVersion}`
+    const iconDarkPath = `${joinSegments(baseDir, "static/icon-dark.png")}?v=${iconVersion}`
 
     // Canonical URL of the current page. simplifySlug collapses "index" -> "/"
     // and "notes/index" -> "notes/", so the homepage emits the apex rather than
