@@ -7,23 +7,42 @@ markdown and are rendered to static HTML at build time. The one dynamic piece is
 a visitor counter — a Lambda reading DynamoDB — served same-origin behind
 CloudFront (see [How this deploys](#how-this-deploys-aws)).
 
+**Map:** design and privacy → [The design](#the-design) · local Quartz forks →
+[Local modifications](#local-modifications-to-quartz) · AWS / CRC →
+[How this deploys](#how-this-deploys-aws) · open work → [Known gaps](#known-gaps-in-the-deploy-itself)
+and [Not done yet](#not-done-yet).
+
 ## Running it
 
 ```bash
 npx quartz build --serve    # http://localhost:8080, rebuilds on save
 npx quartz build            # write static output to public/
+./fix-routing.sh            # required before any S3 sync — see deploy gotchas
 ```
+
+Deploy (manual, no CI yet):
+
+```bash
+npx quartz build && ./fix-routing.sh && aws s3 sync public/ s3://BUCKET/ --delete
+# invalidate CloudFront for HTML/JS if the distribution caches them
+```
+
+A clean checkout also needs `npx quartz plugin install` before the first build
+(see [Gotchas](#gotchas-this-repo-already-knows-about)).
 
 ## Where things are
 
-| path                        | what                                       |
-| --------------------------- | ------------------------------------------ |
-| `content/`                  | the notes; everything else is machinery    |
-| `quartz.config.yaml`        | theme, plugins, layout                     |
-| `quartz/styles/custom.scss` | all custom styling                         |
-| `quartz/static/`            | portrait plates, favicon                   |
-| `plugins/`                  | vendored plugins — components + one emitter |
-| `scripts/`                  | portrait dithering                         |
+| path                          | what                                                          |
+| ----------------------------- | ------------------------------------------------------------- |
+| `content/`                    | the notes; everything else is machinery                       |
+| `content/robots.txt`          | crawler allow + sitemap pointer                               |
+| `quartz.config.yaml`          | theme, plugins, layout                                        |
+| `quartz/styles/custom.scss`   | all custom styling                                            |
+| `quartz/static/`              | portrait plates, favicon                                      |
+| `plugins/`                    | vendored plugins: `footer`, `status`, `tag-index`, `content-index` |
+| `infra/visit-counter/`        | Lambda source for the visitor counter (console-deployed)      |
+| `fix-routing.sh`              | post-build rewrite for CloudFront clean URLs                  |
+| `scripts/`                    | portrait dithering                                            |
 
 ## The design
 
@@ -180,7 +199,8 @@ in the markup for crawlers.
 
 **`quartz/components/pages/404.tsx`** — replaced the stock i18n copy ("Either
 this page is private or doesn't exist" / "Return to homepage") with the site's
-own lowercase wording. The case-insensitive slug-redirect script is kept.
+own lowercase wording ("there's nothing at this address…", "← back home"). The
+case-insensitive slug-redirect script is kept.
 
 **`quartz/components/scripts/popover.inline.ts`** — two changes, both tracked in
 git. First, bail out of empty popovers: content types with no renderer (e.g.
@@ -200,6 +220,9 @@ session to the same-origin `/api/visit`, reads with `GET /api/stats` thereafter,
 and removes itself if the API is unreachable — a dead counter is worse than
 none. The session flag is set *before* the fetch, because Quartz fires `nav`
 twice per load and a flag set after `await` let one load count as two visitors.
+If `POST` fails (throttle, origin check, 5xx), it **falls back to `GET /api/stats`**
+so the number still shows without counting — same fail-soft rule. Backend details
+live under [Visitor counter](#visitor-counter).
 
 **`plugins/status/`** — renders `status:` frontmatter as a dot + label.
 `note-properties` is the only stock plugin that prints a frontmatter value, and
@@ -225,34 +248,30 @@ Unlike the hand-written plugins above, this one is the upstream **bundled `dist`
 self-contained (imports only `path` and `fs`), so it needs no build step and no
 `node_modules`. The patch is marked `VENDOR PATCH` in the file.
 
-> These are **tracked in git** rather than patched into the gitignored `.quartz/`
-> — same reasoning as the footer: a fetched plugin gets refetched in CI, so a
-> local patch would make CI silently emit different HTML than a local build. The
-> three components are hand-written plain JS; `content-index` is a vendored bundle
-> (see above). `npx quartz plugin install` reports "failed to update" for each —
-> **expected**: a local-path plugin has no remote to pull from, and the build
-> uses the local copy regardless.
+> All of the above under `plugins/` (and the small Quartz core edits) are
+> **tracked in git**, not patched into the gitignored `.quartz/`. A fetched
+> plugin is refetched in CI, so a local-only patch would make CI silently emit
+> different HTML than a laptop build — the build-drift you would flag in a
+> security review. Vendoring keeps local and CI byte-identical. Quartz is
+> credited on `/colophon`; `LICENSE.txt` is retained (MIT).
+>
+> `npx quartz plugin install` reports "failed to update" for each local-path
+> plugin — **expected**: there is no remote to pull; the build uses the local
+> copy regardless.
 >
 > **Gotcha:** for *components*, Quartz's loader imports from the package's
 > `./components` subpath export, *not* the main entry — each re-exports through
 > `components.js`. (`content-index` is an emitter, not a component, so it exports
 > its factory straight from the main entry instead.)
 
-> This started as a patch to the fetched plugin in `.quartz/` — which is
-> **gitignored**, so CI would have refetched the plugin and silently emitted
-> different HTML than a local build. That is exactly the build-drift you would
-> flag in a security review, so the component is vendored instead: tracked, no
-> fetch, local and CI byte-identical. Quartz is credited on `/colophon`, and
-> `LICENSE.txt` is retained, which is what MIT actually requires.
-
 ## Git
 
 - `origin` — [verdantpro/verdant_cloud](https://github.com/verdantpro/verdant_cloud), branch `main`.
 - `upstream` — jackyzha0/quartz, for pulling Quartz updates.
 
-The full Quartz history was kept (~1878 commits), so `git merge upstream/v5`
-stays straightforward. It also means the contributor graph is mostly Jacky's,
-and that `quartz/components/scripts/popover.inline.ts` will need merge care.
+The full Quartz history was retained so `git merge upstream/v5` stays
+straightforward. That also means the contributor graph is mostly Jacky's, and
+that `quartz/components/scripts/popover.inline.ts` will need merge care.
 
 ## How this deploys (AWS)
 
@@ -272,25 +291,20 @@ npx quartz build → ./fix-routing.sh → aws s3 sync   (by hand, from a laptop;
                               ACM cert (us-east-1) · Route 53 alias (apex; www 301s to apex)
                                 /                         \
                         behavior *                    behavior /api/*
-                            |                             |  no caching, no viewer function,
+                            |                             |  CachingDisabled, POST allowed,
                             v                             |  Host header stripped
                   S3 (private, OAC)                       v
                   + viewer function                 API Gateway (HTTP API v2)
-                  (uri + "/index.html")             GET /api/stats · POST /api/visit
+                  (uri + "/index.html")             GET|HEAD /api/stats · POST /api/visit
                                                       → Lambda (python) → DynamoDB (site-stats)
 ```
 
-Verified against the live site: Route 53 nameservers, CloudFront in front of an
-S3 origin, an Amazon-issued cert covering both `verdantprotocol.com` and
-`www.verdantprotocol.com`, clean URLs resolving in subpaths, a real 404 on a
-missing path, `www` returning `301` to the apex, and `GET /api/stats` returning
-the counter JSON through CloudFront (no `execute-api` host reaches the browser).
-
-The visitor counter's backend — API Gateway HTTP API → Lambda (Python) →
-DynamoDB (`site-stats`) — is reached **same-origin**: a `/api/*` CloudFront
-behavior forwards to API Gateway, so the browser never calls `execute-api` and
-the colophon's "every request goes to this domain" stays true. Like the frontend
-infrastructure below, it is **built in the console, not yet in Terraform**.
+Verified against the live site (re-check after big deploys): Route 53 nameservers,
+CloudFront in front of an S3 origin, an Amazon-issued cert covering both
+`verdantprotocol.com` and `www.verdantprotocol.com`, clean URLs resolving in
+subpaths, a real 404 on a missing path, `www` returning to the apex, and
+`GET /api/stats` returning counter JSON through CloudFront (no `execute-api`
+host reaches the browser).
 
 **Security headers** are set by a CloudFront response headers policy on both
 behaviors: `Strict-Transport-Security: max-age=63072000; includeSubDomains`
@@ -299,18 +313,61 @@ behaviors: `Strict-Transport-Security: max-age=63072000; includeSubDomains`
 and `X-Frame-Options: DENY`. Origin-override is on, so the policy stays
 authoritative if an origin ever emits its own. Console-managed, like the rest.
 
+### Visitor counter
+
+Same-origin only: the browser calls `/api/stats` and `/api/visit` on
+`verdantprotocol.com`. CloudFront's `/api/*` behavior forwards to API Gateway
+(HTTP API) → Lambda `site-stats` → DynamoDB table `site-stats`. That keeps the
+colophon's "every request goes to this domain" true.
+
+| Layer | Role |
+| ----- | ---- |
+| Footer (`plugins/footer/`) | One `POST` per browser session (`sessionStorage`), then `GET`; fail-soft; GET-fallback if POST fails |
+| API routes | `GET`/`HEAD` `/api/stats`, `POST` `/api/visit` |
+| Lambda | Source of truth in-repo: [`infra/visit-counter/handler.py`](infra/visit-counter/handler.py) (deploy by pasting/uploading to the console function; handler name in AWS is `lambda_function.handler`) |
+| DynamoDB | `pk` string key. Lifetime total on `pk=site`; per-day count on `day#YYYY-MM-DD`; per-IP-per-day dedup on `IP#<salted-hash>#YYYY-MM-DD` with TTL |
+
+**Env vars on the Lambda** (must be real values — not prose placeholders):
+
+| Key | Meaning |
+| --- | ------- |
+| `TABLE_NAME` | e.g. `site-stats` |
+| `IP_HASH_SALT` | long random secret; salts the IP hash so table rows are not reversible offline |
+| `ALLOWED_ORIGINS` | comma-separated origins, e.g. `https://verdantprotocol.com,https://www.verdantprotocol.com` |
+
+> **Gotcha:** if `ALLOWED_ORIGINS` is set to something that is not a real origin
+> string (e.g. a note like `apex + www`), every browser `POST` sends
+> `Origin: https://…` and the Lambda returns **403**. CloudFront maps **403 →
+> `/404.html`** for private-S3 misses (see below), so a mis-set origin list looks
+> exactly like a broken route: HTML 404, `server: AmazonS3`, no
+> `apigw-requestid`. Fix the env var; do not chase path patterns first.
+
+Client IP for dedup: prefer `CloudFront-Viewer-Address` if the origin request
+policy forwards it; otherwise the first hop of `X-Forwarded-For`. Do **not** key
+dedup on API Gateway `sourceIp` alone behind CloudFront — that is often the edge,
+not the visitor, and would undercount badly.
+
+A public counter is never unforgeable (many IPs, proxies). Throttle +
+per-IP-per-day conditional put is anti-script friction, not an audit metric.
+Stage throttle is set on the HTTP API `$default` stage.
+
+Like the rest of the stack, the live API/Lambda/table wiring is still
+**console-managed**, not Terraform. The Python in `infra/` is what should be
+deployed when the function is updated.
+
 ### Known gaps in the deploy itself
 
 - **There is no CI.** No `.github/` in this repo — deploys are a manual
   `aws s3 sync` from a laptop, which means the deployed site can silently drift
-  from `main`. It already did once: `my-name.md` and `fix-routing.sh` were live
-  before they were ever committed. Automating this (GitHub Actions + an OIDC
-  role, no stored keys) is the next real task.
+  from `main`. It already did once: content and `fix-routing.sh` were live before
+  they were committed. Automating this (GitHub Actions + an OIDC role, no stored
+  keys) is the next real task.
 - **No infrastructure-as-code at all — frontend or backend.** The bucket,
   distribution, functions, cert, DNS records, *and* the counter's API Gateway,
   Lambda, and DynamoDB table were all clicked together in the console, so none of
   it is reproducible or reviewable. The challenge asks for IaC; this is the
-  largest thing still owed.
+  largest thing still owed. Counter *logic* lives in `infra/visit-counter/`; the
+  cloud resources do not.
 
 ### Gotchas this repo already knows about
 
@@ -328,27 +385,34 @@ authoritative if an origin ever emits its own. Console-managed, like the rest.
   alone), so the viewer-request CloudFront Function rewrites
   `req.uri = uri + "/index.html"` — *not* `+ ".html"`. **The build is not
   deployable without that script**; any CI job must run it between
-  `quartz build` and the S3 sync.
-- **A private-bucket miss surfaces as 403, not 404** — map CloudFront's 403 error
-  response to the 404 page, or the themed 404 never renders.
+  `quartz build` and the S3 sync. Shipping flat `*.html` without the rewrite
+  leaves clean paths 404 while `path.html` still works.
+- **A private-bucket miss surfaces as 403, not 404** — CloudFront maps **403 →
+  `/404.html`** (with response status 404) so the themed page renders. That same
+  mapping rewrites **any** origin 403, including API Gateway/Lambda `403` on
+  `/api/*`, into the HTML 404 page. Prefer debugging API failures against the
+  `execute-api` URL (JSON body + `apigw-requestid`) before blaming routing.
+- **`/api/*` must allow POST** on the CloudFront behavior (not GET/HEAD only),
+  use a non-caching policy, and forward viewer headers the Lambda needs for IP
+  (at least `X-Forwarded-For` / `CloudFront-Viewer-Address` as configured).
 - **`public/CNAME` was a GitHub Pages artifact** emitted on every build by the
   `cname` plugin (from `baseUrl`), useless on CloudFront. The plugin is now
   disabled in `quartz.config.yaml`, so the file is no longer produced — deleting
   it by hand never worked, since the build regenerated it. A stale copy may still
   sit in the S3 bucket until the next `aws s3 sync --delete`.
-- **`.node-version` says v22.16.0** and the guide's workflow reads it via
-  `node-version-file`, but this machine currently runs v26. CI will build on 22.
-  Reconcile before trusting a green pipeline.
+- **`.node-version` says v22.16.0** and sample workflows often pin that file, but
+  this machine currently runs v26. CI will build on 22. Reconcile before trusting
+  a green pipeline.
 
 ## Not done yet
 
-- **No analytics at all** — that is now a deliberate choice, not an omission. See
-  the zero-third-party table above before adding any.
-- The **404** uses the site's layout now, but the copy is still Quartz's
-  ("Either this page is private or doesn't exist") — that string is hardcoded in
-  the built-in emitter, not configurable.
+- **No analytics at all** — deliberate, not an omission. See the zero-third-party
+  table above before adding any.
 - The homepage links to one note (`on ai writing...`) as a "start here". Because
   backlinks are earned by real links, only linked notes show a "linked from
   verdant protocol" — `why-cloud` shows none because nothing links to it. As the
   garden grows, either link new notes from the homepage deliberately or lean on
   `/notes`, which indexes them all automatically.
+- **IaC + CI** for the full stack (called out under Known gaps) — still the main
+  CRC debt.
+)
