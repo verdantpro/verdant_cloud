@@ -15,20 +15,25 @@ and [Not done yet](#not-done-yet).
 ## Running it
 
 ```bash
-npx quartz build --serve    # http://localhost:8080, rebuilds on save
-npx quartz build            # write static output to public/
-./fix-routing.sh            # required before any S3 sync — see deploy gotchas
+npx quartz plugin install --from-config   # first checkout / after plugin changes
+npx quartz build --serve                  # http://localhost:8080, rebuilds on save
+npx quartz build                          # write static output to public/
+./fix-routing.sh                          # required before any S3 sync — see deploy gotchas
 ```
 
-Deploy (manual, no CI yet):
+**Deploy is CI-first.** Pushes to `main` that touch site-affecting paths run
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): install plugins
+from config → build → `fix-routing.sh` → OIDC assume-role → `aws s3 sync` →
+CloudFront invalidation. Manual laptop deploy still works as a fallback:
 
 ```bash
 npx quartz build && ./fix-routing.sh && aws s3 sync public/ s3://BUCKET/ --delete
-# invalidate CloudFront for HTML/JS if the distribution caches them
+# then invalidate CloudFront for HTML/JS if the distribution caches them
 ```
 
-A clean checkout also needs `npx quartz plugin install` before the first build
-(see [Gotchas](#gotchas-this-repo-already-knows-about)).
+A clean checkout needs `npx quartz plugin install --from-config` before the first
+build (plain `plugin install` is wrong for vendored plugins — see
+[Gotchas](#gotchas-this-repo-already-knows-about)).
 
 ## Where things are
 
@@ -39,8 +44,9 @@ A clean checkout also needs `npx quartz plugin install` before the first build
 | `quartz.config.yaml`          | theme, plugins, layout                                        |
 | `quartz/styles/custom.scss`   | all custom styling                                            |
 | `quartz/static/`              | portrait plates, dual favicon tiles, og-image                 |
-| `plugins/`                    | vendored plugins: `footer`, `status`, `tag-index`, `content-index` |
+| `plugins/`                    | vendored: `footer`, `status`, `tag-index`, `content-index`, `sidenotes` |
 | `infra/visit-counter/`        | Lambda source for the visitor counter (console-deployed)      |
+| `.github/workflows/deploy.yml`| frontend deploy (OIDC → S3 → CloudFront)                      |
 | `fix-routing.sh`              | post-build rewrite for CloudFront clean URLs                  |
 | `scripts/`                    | portrait + favicon generation (`dither-portrait.py`)          |
 
@@ -105,7 +111,24 @@ that claim checkable instead of merely asserted.
 > **Gotcha:** `status: draft` is *not* `draft: true`. The first is cosmetic (the
 > dot) and leaves the note **fully published**. The second is the `remove-draft`
 > plugin's flag and drops the page from the build entirely. A note marked
-> `status: draft` is public — both current draft notes are live on purpose.
+> `status: draft` is public on purpose.
+
+**`description:` is a permanent italic subtitle**, not a collapsible Properties
+table. Stock `note-properties` renders frontmatter in a `<details>` that
+remembers collapse in `localStorage` — which made subtitles flash then vanish.
+`custom.scss` strips the chrome and keeps the body visible; `plugins/status`
+clears the sticky collapse key on each SPA nav. See
+[Local modifications](#local-modifications-to-quartz).
+
+**Sidenotes, not endnotes.** Markdown footnotes are relocated at build time by
+`plugins/sidenotes` into Tufte-style margin notes in the gutter beside the prose
+(inline below desktop). Zero client JavaScript — the colophon's first-party
+claim stays intact.
+
+**Hierarchy is loud at the top, quiet below.** Article titles use a display-sized
+`clamp`; in-article `h2`s carry a small structural green mark. The resume page
+gets a **density mode** (wider measure, tighter lists) so a CV can be skimmed
+inside the same type system.
 
 **Folder and tag listings are a ledger** — title left, date ruled flush right,
 one hairline per row. This styles `.page-listing`, the markup Quartz already
@@ -244,12 +267,22 @@ none. The session flag is set *before* the fetch, because Quartz fires `nav`
 twice per load and a flag set after `await` let one load count as two visitors.
 If `POST` fails (throttle, origin check, 5xx), it **falls back to `GET /api/stats`**
 so the number still shows without counting — same fail-soft rule. Backend details
-live under [Visitor counter](#visitor-counter).
+live under [Visitor counter](#visitor-counter). On `/colophon` only, the footer also
+prints a **build stamp** (`git describe` + UTC date) so a systems reader can match
+the live site to a commit.
 
 **`plugins/status/`** — renders `status:` frontmatter as a dot + label.
 `note-properties` is the only stock plugin that prints a frontmatter value, and
 it prints an undifferentiated `<tr>` with **no per-property hook** — there is no
 way to style `status` apart from `description` in CSS alone. Hence a component.
+It also ships a small `afterDOMLoaded` script that keeps `details.note-properties`
+open and clears the stock plugin's `note-properties-collapsed` localStorage key,
+so description subtitles cannot be sticky-hidden after SPA navigation.
+
+**`plugins/sidenotes/`** — a rehype transformer (not a layout component): moves
+GFM footnote bodies from the end-of-article section into `<aside class="sidenote">`
+next to the referencing block. CSS floats them into the measure gutter on
+desktop. Build-time only — no browser JS.
 
 **`plugins/tag-index/`** — the sidebar list of every tag, with counts. Quartz has
 no site-wide tag component: `tag-list` renders only the *current page's* tags, and
@@ -291,9 +324,14 @@ self-contained (imports only `path` and `fs`), so it needs no build step and no
 - `origin` — [verdantpro/verdant_cloud](https://github.com/verdantpro/verdant_cloud), branch `main`.
 - `upstream` — jackyzha0/quartz, for pulling Quartz updates.
 
-The full Quartz history was retained so `git merge upstream/v5` stays
-straightforward. That also means the contributor graph is mostly Jacky's, and
-that `quartz/components/scripts/popover.inline.ts` will need merge care.
+**History.** GitHub still holds the deep Quartz lineage on `origin` when fetched
+fully, so `git merge upstream/v5` can work from a non-shallow clone that shares
+that ancestor. A shallow checkout (`git rev-parse --is-shallow-repository`) will
+look like a short private history and block merge-base walks — run
+`git fetch --unshallow` (or a full clone) before merging upstream. Core edits such
+as `quartz/components/scripts/popover.inline.ts` still need merge care either way.
+The contributor graph on a full history is mostly Jacky's; on a shallow or
+rewritten view it will not be.
 
 ## How this deploys (AWS)
 
@@ -305,8 +343,29 @@ Originally planned on GCP; switched to AWS after the GCP account was blocked at
 signup. AWS is also the better fit here: HTTPS needs no paid load balancer
 (CloudFront + a free ACM cert), and the bucket can stay private.
 
+### CI (frontend)
+
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) deploys on push to
+`main` when site-affecting paths change (`content/`, `quartz/`, `plugins/`,
+config, `fix-routing.sh`, or the workflow itself), and on
+`workflow_dispatch`. README-only pushes do **not** deploy.
+
+| GitHub | Name | Role |
+| ------ | ---- | ---- |
+| **Secret** | `AWS_DEPLOY_ROLE_ARN` | IAM role assumed via OIDC (no long-lived keys in GitHub) |
+| **Variable** | `S3_BUCKET` | bucket name only (e.g. `verdantprotocol`) |
+| **Variable** | `CLOUDFRONT_DISTRIBUTION_ID` | distribution id for `/*` invalidation |
+
+The role needs `s3:ListBucket` on the bucket ARN (no `/*`), object R/W on
+`bucket/*`, and `cloudfront:CreateInvalidation` on the distribution. Trust
+`token.actions.githubusercontent.com` for
+`repo:verdantpro/verdant_cloud:ref:refs/heads/main`. Steps must use
+`npx quartz plugin install --from-config` (not plain install) before build — see
+gotchas.
+
 ```
-npx quartz build → ./fix-routing.sh → aws s3 sync   (by hand, from a laptop; no CI yet)
+push main (path filter) → Actions: plugin install --from-config → quartz build
+                        → ./fix-routing.sh → OIDC → s3 sync --delete → CF invalidate
                                           |
                                           v
                               CloudFront distribution
@@ -379,26 +438,24 @@ deployed when the function is updated.
 
 ### Known gaps in the deploy itself
 
-- **There is no CI.** No `.github/` in this repo — deploys are a manual
-  `aws s3 sync` from a laptop, which means the deployed site can silently drift
-  from `main`. It already did once: content and `fix-routing.sh` were live before
-  they were committed. Automating this (GitHub Actions + an OIDC role, no stored
-  keys) is the next real task.
-- **No infrastructure-as-code at all — frontend or backend.** The bucket,
-  distribution, functions, cert, DNS records, *and* the counter's API Gateway,
-  Lambda, and DynamoDB table were all clicked together in the console, so none of
-  it is reproducible or reviewable. The challenge asks for IaC; this is the
-  largest thing still owed. Counter *logic* lives in `infra/visit-counter/`; the
-  cloud resources do not.
+- **Frontend CI is in; IaC is not.** [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+  builds and publishes the static site via OIDC. The bucket, distribution,
+  functions, cert, DNS, *and* the counter's API Gateway, Lambda, and DynamoDB
+  table were all clicked together in the console — none of that resource graph
+  is Terraform (or similar). The challenge still asks for IaC; counter *logic*
+  lives in `infra/visit-counter/`, the cloud resources do not.
+- **Lambda/API wiring is still console-updated.** Changing `handler.py` in git
+  does not deploy the function until someone pastes or uploads it in AWS.
 
 ### Gotchas this repo already knows about
 
-- **CI must run `npx quartz plugin install` before `quartz build`.** A clean
-  checkout cannot build without it — `Head.tsx` imports a generated
+- **CI must run `npx quartz plugin install --from-config` before `quartz build`.**
+  A clean checkout cannot build without it — `Head.tsx` imports a generated
   `.quartz/plugins` index that does not exist until plugins are installed, and
-  `.quartz/` is gitignored. The guide's sample workflow shows
-  `npm ci && npx quartz build`; that will fail here. This is also why the footer
-  is vendored rather than patched (see above).
+  `.quartz/` is gitignored. Plain `plugin install` (from the lockfile) can
+  re-resolve vendored plugins to stale upstream copies. The workflow uses
+  `--from-config` on purpose. This is also why the footer is vendored rather
+  than patched (see above).
 - **Clean URLs — settled: folder convention.** Quartz links to
   `/notes/why-cloud`, but the build emits `notes/why-cloud.html`, and
   CloudFront's default-root-object only applies at `/`, not in subpaths.
@@ -406,7 +463,7 @@ deployed when the function is updated.
   `page.html` into `page/index.html` (leaving `index.html` and `404.html`
   alone), so the viewer-request CloudFront Function rewrites
   `req.uri = uri + "/index.html"` — *not* `+ ".html"`. **The build is not
-  deployable without that script**; any CI job must run it between
+  deployable without that script**; the Actions job runs it between
   `quartz build` and the S3 sync. Shipping flat `*.html` without the rewrite
   leaves clean paths 404 while `path.html` still works.
 - **A private-bucket miss surfaces as 403, not 404** — CloudFront maps **403 →
@@ -422,9 +479,15 @@ deployed when the function is updated.
   disabled in `quartz.config.yaml`, so the file is no longer produced — deleting
   it by hand never worked, since the build regenerated it. A stale copy may still
   sit in the S3 bucket until the next `aws s3 sync --delete`.
-- **`.node-version` says v22.16.0** and sample workflows often pin that file, but
-  this machine currently runs v26. CI will build on 22. Reconcile before trusting
-  a green pipeline.
+- **`.node-version` pins Node 22** for CI (`actions/setup-node` reads that file).
+  Local machines may run newer Node; trust the pipeline's 22.x build for what
+  ships.
+- **Description subtitles and `note-properties`.** If a description flashes under
+  the title then disappears, the stock plugin closed the Properties `<details>`
+  via `localStorage`. The status plugin + CSS fix above should prevent that; a
+  hard reload clears a sticky key if an old tab still has it.
+- **Favicon cache is sticky.** Browsers ignore normal reloads for icons;
+  `Head.tsx` uses `?v=` on the icon URLs — bump that number when the tiles change.
 
 ## Not done yet
 
@@ -432,9 +495,10 @@ deployed when the function is updated.
   table above before adding any.
 - The homepage links to one note (`on ai writing...`) as a "start here". Because
   backlinks are earned by real links, only linked notes show a "linked from
-  verdant protocol" — `why-cloud` shows none because nothing links to it. As the
-  garden grows, either link new notes from the homepage deliberately or lean on
-  `/notes`, which indexes them all automatically.
-- **IaC + CI** for the full stack (called out under Known gaps) — still the main
-  CRC debt.
-)
+  verdant protocol" — notes nothing links to show none. As the garden grows,
+  either link new notes from the homepage deliberately or lean on `/notes`, which
+  indexes them all automatically.
+- **Infrastructure-as-code** for the AWS resource graph (called out under Known
+  gaps) — still the main CRC debt after frontend CI.
+- **`/now`** may exist as unlisted content for personal use; it is not in the
+  footer until it is real.

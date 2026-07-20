@@ -1,0 +1,30 @@
+{
+  "name": "verdant-sidenotes",
+  "version": "1.0.0",
+  "description": "Renders markdown footnotes as Tufte-style margin notes at build time. No client JS: the footnote is relocated into an <aside> next to its reference and floated into the reading column's right gutter by CSS.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./index.js",
+  "sideEffects": false,
+  "peerDependencies": {
+    "unist-util-visit": "*",
+    "hastscript": "*"
+  },
+  "quartz": {
+    "name": "sidenotes",
+    "displayName": "Sidenotes",
+    "category": "transformer",
+    "version": "1.0.0",
+    "quartzVersion": ">=5.0.0",
+    "dependencies": [],
+    "defaultOrder": 55,
+    "defaultEnabled": true,
+    "defaultOptions": {}
+  }
+}

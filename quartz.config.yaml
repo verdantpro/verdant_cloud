@@ -161,6 +161,13 @@ plugins:
     options:
       enableSiteMap: true
       enableRSS: true
+  # renders markdown footnotes as Tufte margin notes at build time (no client JS):
+  # a footnote is relocated into an <aside class="sidenote"> beside its reference
+  # and floated into the reading column's right gutter by custom.scss. order 55 so
+  # it runs after the markdown transformers have produced the footnote html.
+  - source: ./plugins/sidenotes
+    enabled: true
+    order: 55
   - source: github:quartz-community/favicon
     enabled: true
   - source: github:quartz-community/og-image
@@ -285,6 +292,7 @@ plugins:
     enabled: true
     options:
       links:
+        # now: /now  — page exists (content/now.md, unlisted) but not ready; re-enable when real
         colophon: /colophon
         source: https://github.com/verdantpro/verdant_cloud
         rss: /index.xml

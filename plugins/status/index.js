@@ -10,9 +10,39 @@
 // it prints an undifferentiated table row — there is no per-property hook to
 // style `status` differently from `description`. Hence a component.
 //
+// Also forces note-properties <details> open on every nav. The stock plugin
+// persists collapse in localStorage ("note-properties-collapsed"); we restyle
+// that panel as a permanent description subtitle in custom.scss, so a closed
+// state makes the subtitle flash then vanish. CSS forces the body visible as a
+// backstop; this script keeps the open attribute honest too.
+//
 // Plain JS on purpose, like plugins/footer: no build step, nothing to get stale.
 
 import { h } from "preact"
+
+// Keep description subtitles visible: stock note-properties is a collapsible
+// <details> that re-applies localStorage collapse on every SPA nav/render.
+const keepDescriptionOpen = `
+(() => {
+  // stock plugin key — see .quartz/plugins/note-properties client script
+  const KEY = "note-properties-collapsed"
+  function openAll() {
+    // clear first so a later stock handler on the same tick sees null and leaves open
+    try { localStorage.removeItem(KEY) } catch (_) {}
+    document.querySelectorAll("details.note-properties").forEach((el) => {
+      el.open = true
+    })
+  }
+  function onNav() {
+    openAll()
+    // stock note-properties also listens on nav/render; microtask re-asserts after it
+    queueMicrotask(openAll)
+  }
+  document.addEventListener("nav", onNav)
+  document.addEventListener("render", onNav)
+  openAll()
+})()
+`
 
 export const Status = () => {
   const StatusComponent = ({ fileData, displayClass }) => {
@@ -33,6 +63,10 @@ export const Status = () => {
       status,
     )
   }
+
+  // Always attach: this script serves every page that has note-properties, not
+  // only pages with a status: field. Status is in the global beforeBody layout.
+  StatusComponent.afterDOMLoaded = keepDescriptionOpen
 
   return StatusComponent
 }

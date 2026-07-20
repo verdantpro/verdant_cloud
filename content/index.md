@@ -12,7 +12,9 @@ this site is a collection of notes assembled along the road to mastery.
 
 most of what's here is unfinished on purpose — notes get revised in place rather than published and abandoned.
 
-i recognize the capabilities provided by llms. this site was built with ai assistance (claude, some grok, and eventually codex...), but the prose is solely created by me, errors and all. i figured i would leave css to the machines, and focus on providing stellar insight on my journey.
+i recognize the capabilities provided by llms. this site was built with ai assistance (claude, some grok, and eventually codex...), but the prose is solely created by me, errors and all. i figured i would leave css to the machines[^css], and focus on providing stellar insight on my journey.
+
+[^css]: styling and layout are ai-built; the writing here is not.
 
 this site serves several purposes, it:
 - provides a way to practice my skills (aws, devops, iac, etc.)

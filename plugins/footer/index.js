@@ -31,6 +31,35 @@
 // Plain JS on purpose: no build step, nothing to get stale.
 
 import { h } from "preact"
+import { execSync } from "node:child_process"
+
+// Build stamp shown on /colophon: the running commit and build date, in the
+// technical-manual voice. Computed once here at module load — NOT per page — so
+// the git call runs a single time per build no matter how many pages render. It
+// is a systems-person tell that the site is a live, rebuilt system, and a fact a
+// reader can check against the repo.
+//
+// `git describe --always --dirty` returns the short commit (there are no tags to
+// describe against) and appends "-dirty" when the working tree has uncommitted
+// changes, so the stamp never claims a clean commit it was not built from. Falls
+// back to a CI-provided commit env var, then to the date alone, so a build with
+// no git available renders an honest stamp rather than throwing.
+function computeBuildStamp() {
+  let commit = ""
+  try {
+    commit = execSync("git describe --always --dirty --abbrev=7", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim()
+  } catch {
+    commit = (process.env.GIT_COMMIT ?? process.env.COMMIT_REF ?? "").slice(0, 7)
+  }
+  const date = new Date().toISOString().slice(0, 10) // UTC, YYYY-MM-DD
+  return commit ? `build ${commit} · ${date}` : `build ${date}`
+}
+
+const BUILD_STAMP = computeBuildStamp()
 
 // One POST per browser session, not per pageview. quartz runs as an SPA, so a
 // naive POST on every `nav` event would count each internal link click as a new
@@ -125,7 +154,7 @@ export const Footer = (opts) => {
   const visitPath = opts?.visitPath ?? "/api/visit"
   const showCount = opts?.visitorCount !== false
 
-  const FooterComponent = ({ displayClass }) =>
+  const FooterComponent = ({ displayClass, fileData }) =>
     h(
       "footer",
       { class: displayClass ?? "" },
@@ -136,6 +165,9 @@ export const Footer = (opts) => {
       ),
       // `hidden` until the fetch resolves, so a failed call leaves no empty row
       showCount ? h("p", { class: "visitor-count", hidden: true }) : null,
+      // colophon-only: site-wide truth belongs where a systems reader looks for
+      // it, not under every note. data-slug on <body> also drives the CSS.
+      fileData?.slug === "colophon" ? h("p", { class: "build-stamp" }, BUILD_STAMP) : null,
     )
 
   if (showCount) {

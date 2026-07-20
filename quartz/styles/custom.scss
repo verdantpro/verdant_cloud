@@ -292,16 +292,34 @@ a {
 }
 
 // `description` frontmatter, rendered as an italic subtitle under the title.
-// note-properties is the only component that prints a frontmatter value, and it
-// prints an obsidian <details>/table. strip that chrome down to just the value.
+// note-properties is the only stock component that prints a frontmatter value;
+// it renders an Obsidian-style collapsible <details> with a "Properties" header
+// and a key/value table. We want only the description text as a permanent
+// subtitle — no chrome, no collapse.
+//
+// Why descriptions "flash then vanish": the plugin ships client JS that, on
+// every nav/render, restores open state from localStorage key
+// `note-properties-collapsed`. If you ever closed the Properties panel (or a
+// click landed on it), every subsequent page loads open then immediately
+// collapses — and the description lives *inside* that details body, so it
+// disappears with it. Fix: hide the summary, and force the table body visible
+// even when <details> is closed, so localStorage can no longer hide the
+// subtitle. (Always-open via attribute alone is not enough; the JS rewrites it.)
 .note-properties {
   margin: 0 0 0.6rem;
   border: none;
   background: none;
 
-  & .note-properties-header,
+  // no Properties header / count / chevron — not a control, just a subtitle
+  & > .note-properties-header,
   & .note-properties-key {
-    display: none;
+    display: none !important;
+  }
+
+  // UA stylesheet hides non-summary children when details is closed; override
+  // that so a collapsed open attribute still shows the description.
+  &:not([open]) > .note-properties-table {
+    display: block !important;
   }
 
   & .note-properties-table,
@@ -311,6 +329,7 @@ a {
     display: block;
     border: none;
     padding: 0;
+    width: auto;
   }
 
   & .note-properties-text {
@@ -487,6 +506,53 @@ a {
   }
 }
 
+// footnotes rendered as Tufte margin notes. the ./plugins/sidenotes transformer
+// relocates each footnote into an <aside class="sidenote"> right after the block
+// that references it, and removes the bottom footnote section — so the note lives
+// beside the text it annotates, not in a pile at the foot of the page. no js: the
+// aside is build-time html, positioned here with css.
+.sidenote {
+  // below desktop (tablet/phone) there is no room for a margin: the note renders
+  // as a small indented block right after its paragraph. this is the base state;
+  // the desktop float overrides it.
+  margin: 0.5rem 0 0.75rem 1.5rem;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--gray);
+  font-variant-numeric: tabular-nums;
+
+  // the note's number, in accent green, mirroring the inline superscript it
+  // answers — the one structural use of green that ties a note to its mark.
+  &::before {
+    content: attr(data-sidenote);
+    margin-right: 0.3rem;
+    color: var(--secondary);
+    vertical-align: super;
+    font-size: 0.8em;
+  }
+
+  // the body is a <p> (or several); inline the first line so the number and text
+  // read as one marginal note rather than a number stranded on its own line.
+  & p {
+    display: inline;
+    margin: 0;
+  }
+
+  // desktop: pull the note out of the 34rem reading measure into the ~8rem gutter
+  // that sits before the 42rem column edge. that band is reliably empty on every
+  // page, so the note never collides with the toc or the right rail. clear:right
+  // stacks two nearby notes instead of overlapping them — free collision handling.
+  @media #{$desktop} {
+    float: right;
+    clear: right;
+    width: 7rem;
+    // -8rem lands it in the gutter past the reading measure; top nudge aligns it
+    // roughly with the reference block it follows.
+    margin: 0.15rem -8rem 0.6rem 0;
+    text-align: left;
+  }
+}
+
 // breadcrumbs read as a filesystem path: ~ / notes / on-prompt-injection
 .breadcrumb-container {
   font-size: 0.7rem;
@@ -559,10 +625,12 @@ a {
   }
 }
 
-// a "last modified" date and a reading time read as blog chrome on a CV. the
-// resume is a document, not a post — drop the meta band there. data-slug is on
-// <body>, so this targets that one page without a plugin patch.
-body[data-slug="resume"] .content-meta {
+// a "last modified" date and a reading time read as blog chrome on a CV, and the
+// same on /now — both are documents, not posts. /now carries its own hand-kept
+// "as of" line, so an auto date beside it would be a second, competing date.
+// data-slug is on <body>, so this targets those pages without a plugin patch.
+body[data-slug="resume"] .content-meta,
+body[data-slug="now"] .content-meta {
   display: none;
 }
 
@@ -1016,6 +1084,18 @@ footer .visitor-count {
   &[hidden] {
     display: none;
   }
+}
+
+// the build stamp on /colophon — the running commit and build date. same
+// metadata treatment as the visitor counter above: a fact typed like the date
+// and reading time, not a badge bolted onto the page.
+footer .build-stamp {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
 }
 
 // ---------------------------------------------------------------------------
