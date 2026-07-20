@@ -1,31 +1,19 @@
 ---
 title: verdant protocol
+description: justin's digital garden — security notes from baltimore, revised in place
 ---
 
-hi, i'm justin. 
+hi, i'm justin, a baltimore-based cybersecurity pro. 
 
 this is verdant protocol, my digital space where i think out loud.
-
-i'm a baltimore-based cybersecurity pro looking to learn more about cloud technologies.
 
 this site is a collection of notes assembled along the road to mastery.
 
 most of what's here is unfinished on purpose — notes get revised in place rather than published and abandoned.
 
-i recognize the capabilities provided by llms. this site was built with ai assistance (claude, some grok, and eventually codex...), but the prose is solely created by me, errors and all. i figured i would leave css to the machines[^css], and focus on providing stellar insight on my journey.
-
-[^css]: styling and layout are ai-built; the writing here is not.
-
-this site serves several purposes, it:
-- provides a way to practice my skills (aws, devops, iac, etc.)
-- allows me to record the things i learn along the way
-- serves as a tangible record of progress made over time
-- gives me something to add to my resume and potentially talk about in an interview
-
-if you want to look around, [on ai writing...](/notes/on-ai-writing) is a good place to start.
-
-please reach out if you would like to connect!
-
+if you want to look around, either of the following is a good start:
+- [on ai writing...](/notes/on-ai-writing)
+- [wlan vs wifi](/notes/wlan-vs-wifi)
 
 ## elsewhere
 
