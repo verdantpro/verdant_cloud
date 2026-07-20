@@ -4,15 +4,13 @@ date: 2026-07-19
 description: wlan vs wifi, and why security came last
 status: draft
 tags:
-  - wifi
-  - wlan
   - networking
 ---
 a wlan, [wireless local area network](https://en.wikipedia.org/wiki/Wireless_LAN), is a network of devices connected wirelessly within a limited geographic area. these areas can include: homes, schools, office buildings, or campuses. radio waves are used to move data between client devices and a central connection point, typically an access point that bridges to a wired network and the internet. with wlans, the primary goals are flexibility and mobility.
 
 [wifi](https://en.wikipedia.org/wiki/Wi-Fi) is the most popular way to implement a wlan. the name is sometimes expanded as "wireless fidelity", but that is essentially marketing verbiage. the [wifi alliance](https://www.wi-fi.org/) has stated that the term doesn't officially stand for anything.
 
-keep in mind that wlan is the general concept, while wifi specifically refers to 802.11-based wlans that have been certified by the wifi alliance. all wifi runs on a wlan, but not all wlans support wifi.
+keep in mind that wlan is the general concept, while wifi specifically refers to 802.11-based wlans that have been certified by the wifi alliance. all wifi networks are wlans, but not all wlans are wifi.
 
 ## historical background
 ### 19th century origins
@@ -46,24 +44,21 @@ the wifi alliance is an industry group that solves the interoperability gap thro
 the ieee writes the rules; the wifi alliance certifies that products actually follow them and play nicely together.
 
 ## regulatory bodies
-rf frequencies are usable worldwide because the spectrum exists everywhere, but if everyone used whatever frequency at will, interference would eventually disable all communication. regulatory bodies exist to keep the rf spectrum organized and open for fair use.
+rf frequencies are usable worldwide because the spectrum exists everywhere, but if everyone used whatever frequency at will, interference would eventually disable all communication. rules exist to keep the rf spectrum organized and open for fair use — but "who writes the rules" is not one global org with three regional offices.
 
-three main bodies govern the rf spectrum.
-
-| Body | Full name | Scope |
-|------|-----------|-------|
-| **ITU-R** | International Telecommunication Union – Radiocommunication Sector | Global; a **United Nations** specialized agency |
-| **FCC** | Federal Communications Commission | United States (other American countries have their own regulators) |
-| **ETSI** | European Telecommunications Standards Institute | Europe (the European counterpart to the FCC) |
+| Body | Full name | Role |
+|------|-----------|------|
+| **ITU-R** | International Telecommunication Union – Radiocommunication Sector | Global coordination (a **United Nations** specialized agency); frequency allocations across regions |
+| **FCC** | Federal Communications Commission | **National regulator** for the united states (other countries have their own) |
+| **CEPT** | European Conference of Postal and Telecommunications Administrations | Coordinates spectrum policy among european administrations |
+| **ETSI** | European Telecommunications Standards Institute | **Standards body** — writes harmonized technical standards that european regulation references; *not* a spectrum regulator itself |
 
 [itu-r](https://en.wikipedia.org/wiki/ITU-R) coordinates spectrum and frequency assignments across three distinct regions and tries to keep one country's rf signals from interfering with another.
 - region 1: europe, africa, and northern asia
 - region 2: north and south america
 - region 3: southern asia and australasia
 
-the [fcc](https://en.wikipedia.org/wiki/Federal_Communications_Commission) regulates frequencies, channels, and transmission power in the us; several other american countries model their own rules on it.
-
-the [etsi](https://www.etsi.org/) is the european equivalent.
+the [fcc](https://en.wikipedia.org/wiki/Federal_Communications_Commission) regulates frequencies, channels, and transmission power in the us. in europe, **national authorities** set the legal limits, coordinated through [cept](https://en.wikipedia.org/wiki/European_Conference_of_Postal_and_Telecommunications_Administrations); [etsi](https://www.etsi.org/) produces the technical standards those rules often point at. treating etsi as "the european fcc" collapses two different jobs.
 
 the legal channels, allowed frequencies, and max transmit power differ by region. this affects which channels an ap can use, whether channels like the 5ghz [dfs](https://en.wikipedia.org/wiki/Dynamic_frequency_selection) band require radar avoidance, and how much power your device is allowed to output. when capturing or testing, your card's regulatory domain setting genuinely changes what channels you can see and use.
 

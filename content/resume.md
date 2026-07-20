@@ -4,9 +4,9 @@ description: security practitioner — dfir, incident response, threat intellige
 unlisted: true
 ---
 
-Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA). Accepted HOPE 26 speaker.
+Hands-on security practitioner experienced in incident response and digital forensics across 30+ ransomware and business-email-compromise engagements as a primary responder. Skilled at triaging and investigating intrusions across Windows and Linux, performing root-cause analysis from EDR telemetry, log sources, and forensic artifacts, and driving remediation. Strong in SIEM operations and log analysis (Splunk, Zeek), static and dynamic malware analysis, threat hunting, and MITRE ATT&CK-based threat correlation, with supporting depth in security engineering, systems hardening, and automation in Python and Bash. Background includes SIEM operations and continuous monitoring in a federal regulated environment (CMS / FISMA).
 
-[email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro) · [linkedin](https://www.linkedin.com/in/justin-walters-36a579256/)
+[pdf](/static/justin-walters-resume.pdf) · [email](mailto:verdantpro@proton.me) · [github](https://github.com/verdantpro) · [linkedin](https://www.linkedin.com/in/justin-walters-36a579256/)
 
 ## experience
 
@@ -54,8 +54,6 @@ Hands-on security practitioner experienced in incident response and digital fore
 ## projects & community
 
 **Threat-intel & NSM homelab** — self-hosted OpenCTI + MISP threat-intelligence platform alongside a Proxmox NSM stack (Suricata, Wazuh SIEM, Zeek feeding Splunk, OPNsense, Nebula VPN). Ran live malware investigations (FormBook / XLoader, SmartApeSG, PhantomStealer) using Zeek logs in Splunk; provisioned VMs via Terraform. Runs on owned hardware — five Dell servers.
-
-**Speaking** — accepted speaker at HOPE 26 (NYC, August 2026): *"What They Delete, What They Miss: Anti-Forensics from the Incident Response Side of the Table."*
 
 ## skills
 

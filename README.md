@@ -268,8 +268,10 @@ twice per load and a flag set after `await` let one load count as two visitors.
 If `POST` fails (throttle, origin check, 5xx), it **falls back to `GET /api/stats`**
 so the number still shows without counting — same fail-soft rule. Backend details
 live under [Visitor counter](#visitor-counter). On `/colophon` only, the footer also
-prints a **build stamp** (`git describe` + UTC date) so a systems reader can match
-the live site to a commit.
+prints a **build stamp** so a systems reader can match the live site to a commit.
+CI sets `GIT_COMMIT` to `github.sha` (preferred). Local builds fall back to
+`git describe --always --dirty` — a `-dirty` stamp means the tree was not clean;
+prefer shipping only from Actions on committed `main`.
 
 **`plugins/status/`** — renders `status:` frontmatter as a dot + label.
 `note-properties` is the only stock plugin that prints a frontmatter value, and

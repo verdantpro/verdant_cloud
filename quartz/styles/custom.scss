@@ -629,9 +629,11 @@ a {
 // same on /now — both are documents, not posts. /now carries its own hand-kept
 // "as of" line, so an auto date beside it would be a second, competing date.
 // data-slug is on <body>, so this targets those pages without a plugin patch.
+// hide date/reading-time band on document pages (not posts). !important beats
+// any later component CSS so "4 min read" never shows on a CV.
 body[data-slug="resume"] .content-meta,
 body[data-slug="now"] .content-meta {
-  display: none;
+  display: none !important;
 }
 
 // resume density mode. a CV is *scanned*, not read line-by-line — interviewers

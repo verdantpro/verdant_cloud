@@ -45,15 +45,21 @@ import { execSync } from "node:child_process"
 // back to a CI-provided commit env var, then to the date alone, so a build with
 // no git available renders an honest stamp rather than throwing.
 function computeBuildStamp() {
-  let commit = ""
-  try {
-    commit = execSync("git describe --always --dirty --abbrev=7", {
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .toString()
-      .trim()
-  } catch {
-    commit = (process.env.GIT_COMMIT ?? process.env.COMMIT_REF ?? "").slice(0, 7)
+  // Prefer CI-provided SHA so a clean Actions checkout never stamps "-dirty"
+  // from a local uncommitted tree. Fall back to git describe for laptop builds.
+  let commit = (process.env.GIT_COMMIT ?? process.env.COMMIT_REF ?? "").trim()
+  if (commit) {
+    commit = commit.slice(0, 7)
+  } else {
+    try {
+      commit = execSync("git describe --always --dirty --abbrev=7", {
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+        .toString()
+        .trim()
+    } catch {
+      commit = ""
+    }
   }
   const date = new Date().toISOString().slice(0, 10) // UTC, YYYY-MM-DD
   return commit ? `build ${commit} · ${date}` : `build ${date}`

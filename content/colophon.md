@@ -24,4 +24,16 @@ i kept creative direction over all of it. every decision here — the type, the 
 
 that line — delegate the tedious, keep the thinking — is the same one i draw in the note. i would rather state where it falls than let you assume.
 
+## note status
+
+notes may carry a `status:` label under the title:
+
+| status | meaning |
+| ------ | ------- |
+| **draft** | work in progress, but public — unfinished on purpose |
+| **stable** | core claims should hold; i may still revise in place |
+| *(none)* | unmarked; no epistemic promise either way |
+
+`status: draft` is not the same as unpublished. a hollow or filled dot is a claim about confidence, not a hide switch.
+
 the text is licensed [cc by-nc-sa 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/); the code is mit.

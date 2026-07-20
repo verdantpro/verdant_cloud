@@ -31,6 +31,11 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      # footer build stamp prefers this over `git describe --dirty` so CI never
+      # ships a "-dirty" colophon when the tree is clean.
+      GIT_COMMIT: ${{ github.sha }}
+      COMMIT_REF: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +59,9 @@ jobs:
 
       - name: Build
         run: npx quartz build
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+          COMMIT_REF: ${{ github.sha }}
 
       - name: Rewrite to folder convention (required before S3 sync)
         run: ./fix-routing.sh
